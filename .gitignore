@@ -41,3 +41,11 @@ yarn-error.log*
 # ── Cache ─────────────────────────────────
 .cache/
 .turbo/
+
+# ── Otros ─────────────────────────────────
+*.swp
+
+venv/
+.venv/
+
+__pycache__/
