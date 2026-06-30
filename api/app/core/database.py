@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine, text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from decouple import UndefinedValueError
 from app.core.config import get_db_config
+
 
 def build_database_url() -> str:
     try:
@@ -14,6 +14,7 @@ def build_database_url() -> str:
     except UndefinedValueError as e:
         print(f"[ERROR] Falta variable de entorno para la BD: {e}")
         raise SystemExit(1)
+
 
 DATABASE_URL = build_database_url()
 
@@ -30,8 +31,13 @@ SessionLocal = sessionmaker(
     bind=engine,
 )
 
-Base = declarative_base()
 
+# SQLAlchemy 2.0
+class Base(DeclarativeBase):
+    pass
+
+
+# ── Dependencia FastAPI ───────────────────────────────────────
 def get_db():
     db = SessionLocal()
     try:
@@ -39,14 +45,17 @@ def get_db():
     finally:
         db.close()
 
+
+# ── Verificar conexión al arrancar ────────────────────────────
 def verify_connection():
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        print("[DB] Conexión a PostgreSQL exitosa [OK]")
+        print("[DB] Conexión a PostgreSQL exitosa ✓")
     except Exception as e:
         print(f"[DB] Error al conectar con PostgreSQL: {e}")
         raise SystemExit(1)
+
 
 if __name__ == "__main__":
     verify_connection()
