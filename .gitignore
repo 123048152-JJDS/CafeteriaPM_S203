@@ -49,3 +49,7 @@ venv/
 .venv/
 
 __pycache__/
+
+
+estructura.txt
+sql/

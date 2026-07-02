@@ -11,18 +11,18 @@ from app.core.security import hash_password
 from app.models.role import Role
 from app.models.user import User
 
-# def seed_roles(db):
-#     roles_data = [
-#         ("admin",  "Acceso total, panel web y estadísticas"),
-#         ("cocina", "Cola de pedidos, menú e inventario"),
-#         ("caja",   "Cobro, ventas y gastos"),
-#         ("mesero", "Levantamiento y entrega de pedidos"),
-#     ]
-#     for nombre, desc in roles_data:
-#         if not db.query(Role).filter(Role.nombre == nombre).first():
-#             db.add(Role(nombre=nombre, descripcion=desc))
-#     db.commit()
-#     print("✓ Roles creados/verificados")
+def seed_roles(db):
+    roles_data = [
+        ("admin",  "Acceso total, panel web y estadísticas"),
+        ("cocina", "Cola de pedidos, menú e inventario"),
+        ("caja",   "Cobro, ventas y gastos"),
+        ("mesero", "Levantamiento y entrega de pedidos"),
+    ]
+    for nombre, desc in roles_data:
+        if not db.query(Role).filter(Role.nombre == nombre).first():
+            db.add(Role(nombre=nombre, descripcion=desc))
+    db.commit()
+    print("✓ Roles creados/verificados")
 
 
 def seed_admin(db):
@@ -47,7 +47,7 @@ def seed_admin(db):
 if __name__ == "__main__":
     db = SessionLocal()
     try:
-        # seed_roles(db)
+        seed_roles(db)
         seed_admin(db)
         print("\n✅ Seed completado. Ya puedes hacer login.")
     finally:
