@@ -1,5 +1,0 @@
-$kind: collection
-name: 📊 Administración
-auth:
-  type: apikey
-order: 5000

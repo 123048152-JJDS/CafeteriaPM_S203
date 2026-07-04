@@ -1,8 +1,0 @@
-$kind: http-request
-url: "{{base_url}}/stats/productos-mas-vendidos?limit=10"
-method: GET
-headers:
-  Authorization: Bearer {{token}}
-queryParams:
-  limit: "10"
-order: 3000
