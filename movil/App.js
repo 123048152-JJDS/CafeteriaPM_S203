@@ -1,5 +1,6 @@
-import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaView, StyleSheet, Text, Pressable } from "react-native";
+import { useState } from "react";
 
 import MenuScreen from "./screens/MenuScreen";
 
@@ -10,53 +11,132 @@ import RegistrarCompraScreen from "./cocina/RegistrarCompraScreen";
 import PedidosScreen from "./cocina/PedidosScreen";
 import DetallePedidoScreen from "./cocina/DetallePedidoScreen";
 
-const Stack = createNativeStackNavigator();
-
 export default function App() {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="Inicio"
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        <Stack.Screen
-          name="Inicio"
-          component={MenuScreen}
-        />
 
-        <Stack.Screen
-          name="Menu Cocina"
-          component={MenuCocinaScreen}
-        />
+  const [screen, setScreen] = useState("menu");
 
-        <Stack.Screen
-          name="Nuevo Producto"
-          component={NuevoProductoScreen}
-        />
+  switch (screen) {
 
-        <Stack.Screen
-          name="Inventario"
-          component={InventarioScreen}
-        />
+    case "menuCocina":
+      return <MenuCocinaScreen setScreen={setScreen} />;
 
-        <Stack.Screen
-          name="Registrar Compra"
-          component={RegistrarCompraScreen}
-        />
+    case "nuevoProducto":
+      return <NuevoProductoScreen setScreen={setScreen} />;
 
-        <Stack.Screen
-          name="Pedidos"
-          component={PedidosScreen}
-        />
+    case "inventario":
+      return <InventarioScreen setScreen={setScreen} />;
 
-        <Stack.Screen
-          name="Detalle Pedido"
-          component={DetallePedidoScreen}
-        />
+    case "registrarCompra":
+      return <RegistrarCompraScreen setScreen={setScreen} />;
 
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
+    case "pedidos":
+      return <PedidosScreen setScreen={setScreen} />;
+
+    case "detallePedido":
+      return <DetallePedidoScreen setScreen={setScreen} />;
+
+    case "menu":
+    default:
+
+      return (
+
+        <SafeAreaView style={styles.container}>
+
+          <Text style={styles.titulo}>
+            Módulo Cocina
+          </Text>
+
+          <Pressable
+            style={styles.boton}
+            onPress={() => setScreen("menuCocina")}
+          >
+            <Text style={styles.texto}>
+              Menú
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.boton}
+            onPress={() => setScreen("nuevoProducto")}
+          >
+            <Text style={styles.texto}>
+              Nuevo Producto
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.boton}
+            onPress={() => setScreen("inventario")}
+          >
+            <Text style={styles.texto}>
+              Inventario
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.boton}
+            onPress={() => setScreen("registrarCompra")}
+          >
+            <Text style={styles.texto}>
+              Registrar Compra
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.boton}
+            onPress={() => setScreen("pedidos")}
+          >
+            <Text style={styles.texto}>
+              Pedidos
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.boton}
+            onPress={() => setScreen("detallePedido")}
+          >
+            <Text style={styles.texto}>
+              Detalle Pedido
+            </Text>
+          </Pressable>
+
+          <StatusBar style="auto" />
+
+        </SafeAreaView>
+
+      );
+
+  }
+
 }
+
+const styles = StyleSheet.create({
+
+  container:{
+    flex:1,
+    backgroundColor:"#fff",
+    justifyContent:"space-evenly",
+    padding:20,
+  },
+
+  titulo:{
+    fontSize:28,
+    fontWeight:"bold",
+    color:"#243B74",
+    textAlign:"center",
+  },
+
+  boton:{
+    backgroundColor:"#243B74",
+    padding:16,
+    borderRadius:10,
+  },
+
+  texto:{
+    color:"white",
+    fontWeight:"bold",
+    textAlign:"center",
+    fontSize:17,
+  }
+
+});

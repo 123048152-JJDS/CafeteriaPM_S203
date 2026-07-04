@@ -9,7 +9,7 @@ import {
 
 import { COLORS } from "../styles/colors";
 
-export default function DetallePedidoScreen() {
+export default function DetallePedidoScreen({ setScreen }) {
 
   return (
 
@@ -25,62 +25,51 @@ export default function DetallePedidoScreen() {
           Mesa 03
         </Text>
 
-        <Text style={styles.pedido}>
+        <Text style={styles.numero}>
           Pedido #041
         </Text>
 
       </View>
 
-      <View style={styles.producto}>
-
-        <Text style={styles.nombre}>
-          Café Americano
-        </Text>
-
-        <Text style={styles.cantidad}>
-          x2
-        </Text>
-
+      <View style={styles.fila}>
+        <Text>Café Americano</Text>
+        <Text>x2</Text>
       </View>
 
-      <View style={styles.producto}>
-
-        <Text style={styles.nombre}>
-          Sandwich
-        </Text>
-
-        <Text style={styles.cantidad}>
-          x1
-        </Text>
-
+      <View style={styles.fila}>
+        <Text>Sandwich</Text>
+        <Text>x1</Text>
       </View>
 
-      <Text style={styles.notasTitulo}>
+      <Text style={styles.subtitulo}>
         Notas
       </Text>
 
       <View style={styles.notas}>
-
         <Text>
           Sin azúcar y pan integral.
         </Text>
-
       </View>
 
-      <Pressable style={styles.preparando}>
-
-        <Text style={styles.texto}>
+      <Pressable style={styles.preparacion}>
+        <Text style={styles.textoBoton}>
           En preparación
         </Text>
-
       </Pressable>
 
       <Pressable style={styles.listo}>
-
-        <Text style={styles.texto}>
+        <Text style={styles.textoBoton}>
           Marcar como listo
         </Text>
+      </Pressable>
 
+      <Pressable
+        style={styles.regresar}
+        onPress={() => setScreen("menu")}
+      >
+        <Text style={styles.textoBoton}>
+          ← Regresar al menú
+        </Text>
       </Pressable>
 
     </ScrollView>
@@ -92,9 +81,10 @@ export default function DetallePedidoScreen() {
 const styles = StyleSheet.create({
 
 container:{
-flex:1,
-backgroundColor:"#fff",
-padding:20,
+    flex:1,
+    backgroundColor:"#fff",
+    paddingHorizontal:20,
+    paddingTop:60,
 },
 
 titulo:{
@@ -105,59 +95,49 @@ marginBottom:20,
 },
 
 card:{
-backgroundColor:"#FFF9E8",
+backgroundColor:"#FFF8E8",
 padding:15,
 borderRadius:10,
 marginBottom:20,
 },
 
 mesa:{
-fontSize:22,
+fontSize:20,
 fontWeight:"bold",
 },
 
-pedido:{
+numero:{
 marginTop:5,
+},
+
+fila:{
+flexDirection:"row",
+justifyContent:"space-between",
+paddingVertical:12,
+borderBottomWidth:1,
+borderBottomColor:"#EEE",
+},
+
+subtitulo:{
+marginTop:20,
+marginBottom:10,
+fontWeight:"bold",
 fontSize:17,
 },
 
-producto:{
-flexDirection:"row",
-justifyContent:"space-between",
-paddingVertical:15,
-borderBottomWidth:1,
-borderBottomColor:"#ECECEC",
-},
-
-nombre:{
-fontSize:18,
-},
-
-cantidad:{
-fontWeight:"bold",
-fontSize:18,
-},
-
-notasTitulo:{
-marginTop:20,
-fontWeight:"bold",
-fontSize:18,
-marginBottom:8,
-},
-
 notas:{
-backgroundColor:"#F7F7F7",
+backgroundColor:"#F5F5F5",
 padding:15,
 borderRadius:10,
-marginBottom:25,
+marginBottom:20,
 },
 
-preparando:{
+preparacion:{
 backgroundColor:"#FF9800",
 padding:15,
 borderRadius:10,
 alignItems:"center",
-marginBottom:15,
+marginBottom:10,
 },
 
 listo:{
@@ -165,12 +145,19 @@ backgroundColor:"#4CAF50",
 padding:15,
 borderRadius:10,
 alignItems:"center",
+marginBottom:15,
 },
 
-texto:{
-color:"white",
+regresar:{
+backgroundColor:"#555",
+padding:15,
+borderRadius:10,
+alignItems:"center",
+},
+
+textoBoton:{
+color:"#fff",
 fontWeight:"bold",
-fontSize:17,
 }
 
 });

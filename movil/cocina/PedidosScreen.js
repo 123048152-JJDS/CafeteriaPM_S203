@@ -9,64 +9,58 @@ import {
 
 import { COLORS } from "../styles/colors";
 
-export default function PedidosScreen() {
+export default function PedidosScreen({ setScreen }) {
 
   const pedidos = [
     {
       mesa: "Mesa 03",
       pedido: "#041",
-      productos: ["2 Café", "1 Sandwich"],
+      productos: ["2 Café Americano", "1 Sandwich"],
+    },
+    {
+      mesa: "Mesa 05",
+      pedido: "#042",
+      productos: ["1 Pay de Queso", "2 Capuchinos"],
     },
   ];
 
   return (
     <ScrollView style={styles.container}>
 
-      <Text style={styles.titulo}>
-        Cocina
-      </Text>
-
-      <View style={styles.tabs}>
-
-        <Pressable style={styles.tabActivo}>
-          <Text style={styles.tabActivoTexto}>
-            Pendientes
-          </Text>
-        </Pressable>
-
-        <Pressable style={styles.tab}>
-          <Text>En prep.</Text>
-        </Pressable>
-
-        <Pressable style={styles.tab}>
-          <Text>Listos</Text>
-        </Pressable>
-
-      </View>
+      <Text style={styles.titulo}>Pedidos</Text>
 
       {pedidos.map((pedido, index) => (
 
         <View key={index} style={styles.card}>
 
           <Text style={styles.mesa}>
-            {pedido.mesa} {pedido.pedido}
+            {pedido.mesa} - {pedido.pedido}
           </Text>
 
           {pedido.productos.map((producto, i) => (
             <Text key={i} style={styles.producto}>
-              {producto}
+              • {producto}
             </Text>
           ))}
 
-          <Pressable style={styles.boton}>
+          <Pressable style={styles.botonDetalle}>
             <Text style={styles.textoBoton}>
-              Detalles
+              Ver detalles
             </Text>
           </Pressable>
 
         </View>
 
       ))}
+
+      <Pressable
+        style={styles.regresar}
+        onPress={() => setScreen("menu")}
+      >
+        <Text style={styles.textoRegresar}>
+          ← Regresar al menú
+        </Text>
+      </Pressable>
 
     </ScrollView>
   );
@@ -77,8 +71,9 @@ const styles = StyleSheet.create({
   container:{
     flex:1,
     backgroundColor:"#fff",
-    padding:20,
-  },
+    paddingHorizontal:20,
+    paddingTop:60,
+},
 
   titulo:{
     fontSize:30,
@@ -87,60 +82,48 @@ const styles = StyleSheet.create({
     marginBottom:20,
   },
 
-  tabs:{
-    flexDirection:"row",
+  card:{
+    backgroundColor:"#FFF8E8",
+    borderRadius:12,
+    padding:15,
     marginBottom:20,
   },
 
-  tabActivo:{
-    backgroundColor:COLORS.primary,
-    paddingHorizontal:15,
-    paddingVertical:8,
-    borderRadius:20,
-    marginRight:10,
-  },
-
-  tabActivoTexto:{
-    color:"white",
-    fontWeight:"bold",
-  },
-
-  tab:{
-    backgroundColor:"#F2F2F2",
-    paddingHorizontal:15,
-    paddingVertical:8,
-    borderRadius:20,
-    marginRight:10,
-  },
-
-  card:{
-    backgroundColor:"#FFF9E8",
-    padding:18,
-    borderRadius:15,
-  },
-
   mesa:{
-    fontSize:28,
+    fontSize:20,
     fontWeight:"bold",
     marginBottom:10,
   },
 
   producto:{
-    fontSize:22,
+    fontSize:16,
+    marginBottom:5,
   },
 
-  boton:{
+  botonDetalle:{
     backgroundColor:COLORS.primary,
-    marginTop:20,
-    padding:14,
+    padding:12,
     borderRadius:10,
+    marginTop:15,
     alignItems:"center",
   },
 
   textoBoton:{
-    color:"white",
+    color:"#fff",
     fontWeight:"bold",
-    fontSize:17,
+  },
+
+  regresar:{
+    backgroundColor:"#555",
+    padding:15,
+    borderRadius:10,
+    alignItems:"center",
+    marginTop:10,
+  },
+
+  textoRegresar:{
+    color:"#fff",
+    fontWeight:"bold",
   },
 
 });

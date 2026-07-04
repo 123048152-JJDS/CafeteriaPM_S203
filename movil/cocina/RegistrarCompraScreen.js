@@ -1,16 +1,15 @@
 import React from "react";
 import {
-  View,
-  Text,
+  ScrollView,
   StyleSheet,
+  Text,
   TextInput,
   Pressable,
-  ScrollView,
 } from "react-native";
 
 import { COLORS } from "../styles/colors";
 
-export default function RegistrarCompraScreen() {
+export default function RegistrarCompraScreen({ setScreen }) {
 
   return (
 
@@ -20,57 +19,58 @@ export default function RegistrarCompraScreen() {
         Registrar Compra
       </Text>
 
-      <Text style={styles.label}>
-        Producto
-      </Text>
+      <Text style={styles.label}>Producto</Text>
 
       <TextInput
         style={styles.input}
         placeholder="Leche"
       />
 
-      <Text style={styles.label}>
-        Cantidad
-      </Text>
+      <Text style={styles.label}>Cantidad</Text>
 
       <TextInput
         style={styles.input}
-        placeholder="5"
         keyboardType="numeric"
+        placeholder="5"
       />
 
-      <Text style={styles.label}>
-        Unidad
-      </Text>
+      <Text style={styles.label}>Unidad</Text>
 
       <TextInput
         style={styles.input}
         placeholder="Litros"
       />
 
-      <Text style={styles.label}>
-        Proveedor
-      </Text>
+      <Text style={styles.label}>Proveedor</Text>
 
       <TextInput
         style={styles.input}
         placeholder="Lala"
       />
 
-      <Text style={styles.label}>
-        Costo
-      </Text>
+      <Text style={styles.label}>Costo</Text>
 
       <TextInput
         style={styles.input}
-        placeholder="$250"
         keyboardType="numeric"
+        placeholder="$250"
       />
 
       <Pressable style={styles.boton}>
 
         <Text style={styles.textoBoton}>
           Registrar Compra
+        </Text>
+
+      </Pressable>
+
+      <Pressable
+        style={styles.regresar}
+        onPress={() => setScreen("menu")}
+      >
+
+        <Text style={styles.textoRegresar}>
+          ← Regresar al menú
         </Text>
 
       </Pressable>
@@ -84,9 +84,10 @@ export default function RegistrarCompraScreen() {
 const styles = StyleSheet.create({
 
 container:{
-flex:1,
-padding:20,
-backgroundColor:"#fff",
+    flex:1,
+    backgroundColor:"#fff",
+    paddingHorizontal:20,
+    paddingTop:60,
 },
 
 titulo:{
@@ -97,7 +98,6 @@ marginBottom:20,
 },
 
 label:{
-fontSize:16,
 marginBottom:6,
 color:"#666",
 },
@@ -111,7 +111,6 @@ marginBottom:15,
 },
 
 boton:{
-marginTop:20,
 backgroundColor:COLORS.primary,
 padding:16,
 borderRadius:10,
@@ -122,6 +121,19 @@ textoBoton:{
 color:"white",
 fontWeight:"bold",
 fontSize:17,
+},
+
+regresar:{
+backgroundColor:"#555",
+padding:15,
+marginTop:20,
+borderRadius:10,
+alignItems:"center",
+},
+
+textoRegresar:{
+color:"white",
+fontWeight:"bold",
 }
 
 });

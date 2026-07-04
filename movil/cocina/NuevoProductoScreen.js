@@ -11,52 +11,43 @@ import {
 
 import { COLORS } from "../styles/colors";
 
-export default function NuevoProductoScreen() {
+export default function NuevoProductoScreen({ setScreen }) {
 
   const [disponible, setDisponible] = useState(true);
 
   return (
+
     <ScrollView style={styles.container}>
 
-      <Text style={styles.titulo}>
-        Nuevo producto
-      </Text>
+      <Text style={styles.titulo}>Nuevo producto</Text>
 
-      <Text style={styles.label}>
-        Nombre
-      </Text>
+      <Text style={styles.label}>Nombre</Text>
 
       <TextInput
         style={styles.input}
         placeholder="Capuchino"
       />
 
-      <Text style={styles.label}>
-        Precio ($)
-      </Text>
+      <Text style={styles.label}>Precio ($)</Text>
 
       <TextInput
         style={styles.input}
-        placeholder="65.00"
         keyboardType="numeric"
+        placeholder="65"
       />
 
-      <Text style={styles.label}>
-        Categoría
-      </Text>
+      <Text style={styles.label}>Categoría</Text>
 
       <TextInput
         style={styles.input}
         placeholder="Bebidas"
       />
 
-      <Text style={styles.label}>
-        Ingredientes
-      </Text>
+      <Text style={styles.label}>Ingredientes</Text>
 
       <TextInput
         style={styles.input}
-        placeholder="Café 18g, Leche 150ml"
+        placeholder="Café, Leche"
       />
 
       <View style={styles.switchContainer}>
@@ -64,10 +55,6 @@ export default function NuevoProductoScreen() {
         <Switch
           value={disponible}
           onValueChange={setDisponible}
-          trackColor={{
-            false: "#DADADA",
-            true: COLORS.primary,
-          }}
         />
 
         <Text style={styles.switchText}>
@@ -84,8 +71,21 @@ export default function NuevoProductoScreen() {
 
       </Pressable>
 
+      <Pressable
+        style={styles.regresar}
+        onPress={() => setScreen("menu")}
+      >
+
+        <Text style={styles.textoRegresar}>
+          ← Regresar al menú
+        </Text>
+
+      </Pressable>
+
     </ScrollView>
+
   );
+
 }
 
 const styles = StyleSheet.create({
@@ -93,8 +93,9 @@ const styles = StyleSheet.create({
   container:{
     flex:1,
     backgroundColor:"#fff",
-    padding:20,
-  },
+    paddingHorizontal:20,
+    paddingTop:60,
+},
 
   titulo:{
     fontSize:30,
@@ -104,10 +105,9 @@ const styles = StyleSheet.create({
   },
 
   label:{
-    fontSize:15,
-    color:"#666",
     marginBottom:6,
-    marginTop:8,
+    color:"#666",
+    fontSize:15,
   },
 
   input:{
@@ -115,19 +115,18 @@ const styles = StyleSheet.create({
     borderColor:"#DDD",
     borderRadius:10,
     padding:14,
-    backgroundColor:"#fff",
-    marginBottom:10,
+    marginBottom:15,
   },
 
   switchContainer:{
     flexDirection:"row",
     alignItems:"center",
-    marginVertical:18,
+    marginVertical:20,
   },
 
   switchText:{
     marginLeft:10,
-    fontSize:18,
+    fontSize:16,
   },
 
   boton:{
@@ -142,5 +141,19 @@ const styles = StyleSheet.create({
     fontWeight:"bold",
     fontSize:17,
   },
+
+  regresar:{
+    backgroundColor:"#555",
+    padding:15,
+    borderRadius:10,
+    alignItems:"center",
+    marginTop:20,
+  },
+
+  textoRegresar:{
+    color:"white",
+    fontWeight:"bold",
+    fontSize:16,
+  }
 
 });
