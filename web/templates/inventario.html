@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Inventario{% endblock %}
+{% block page_title %}Inventario{% endblock %}
+{% block page_subtitle %}Control de insumos{% endblock %}
+
+{% block content %}
+
+<!-- Alerta de stock crítico -->
+{% if stock_bajo %}
+<div class="alert alert-danger d-flex align-items-center" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <div>
+        <strong>Stock crítico:</strong>
+        {% for ing in stock_bajo %}
+            {{ ing.nombre }} ({{ "%.1f"|format(ing.stock_actual) }} {{ ing.unidad }}){% if not loop.last %}, {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="alert alert-success d-flex align-items-center" role="alert">
+    <i class="bi bi-check-circle-fill me-2"></i>
+    <div>Todos los ingredientes tienen stock suficiente.</div>
+</div>
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex gap-2 flex-wrap">
+        <div class="input-group input-group-sm" style="max-width:200px;">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" placeholder="Buscar insumo...">
+        </div>
+        <button class="btn btn-sm btn-primary-custom">Filtrar</button>
+    </div>
+    <div>
+        <button class="btn btn-sm btn-accent me-1" data-bs-toggle="modal" data-bs-target="#nuevaCompraModal">
+            <i class="bi bi-plus-circle"></i> Registrar compra
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#nuevoInsumoModal">
+            <i class="bi bi-plus-circle"></i> Nuevo insumo
+        </button>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table-custom">
+        <thead>
+            <tr>
+                <th>Ingrediente</th>
+                <th>Unidad</th>
+                <th>Stock actual</th>
+                <th>Stock mínimo</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ing in ingredientes %}
+            <tr>
+                <td>{{ ing.nombre }}</td>
+                <td>{{ ing.unidad }}</td>
+                <td class="{% if ing.stock_actual <= ing.stock_minimo %}text-danger fw-bold{% endif %}">
+                    {{ "%.1f"|format(ing.stock_actual) }}
+                </td>
+                <td>{{ "%.1f"|format(ing.stock_minimo) }}</td>
+                <td>
+                    {% if ing.stock_actual <= ing.stock_minimo %}
+                        <span class="badge-custom badge-danger">Crítico</span>
+                    {% else %}
+                        <span class="badge-custom badge-success">Ok</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="#" class="text-secondary me-2" title="Editar"><i class="bi bi-pencil"></i></a>
+                    <a href="#" class="text-secondary" title="Ajustar stock"><i class="bi bi-sliders2"></i></a>
+                    <a href="#" class="text-danger ms-1" title="Eliminar"><i class="bi bi-trash3"></i></a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center text-muted py-3">No hay ingredientes registrados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Registrar Compra -->
+<div class="modal fade" id="nuevaCompraModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-cart-plus"></i> Registrar compra</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('registrar_compra') }}">
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <label class="form-label small">Ingrediente</label>
+                        <select class="form-select form-select-sm" name="id_ingrediente" required>
+                            {% for ing in ingredientes %}
+                                <option value="{{ ing.id }}">{{ ing.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Cantidad</label>
+                        <input type="number" step="0.1" class="form-control form-control-sm" name="cantidad" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Costo total ($)</label>
+                        <input type="number" step="0.01" class="form-control form-control-sm" name="costo_total" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Fecha</label>
+                        <input type="date" class="form-control form-control-sm" name="fecha" value="{{ now|default('') }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-accent">Guardar compra</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nuevo Insumo -->
+<div class="modal fade" id="nuevoInsumoModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-box-seam"></i> Nuevo insumo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('crear_ingrediente') }}">
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <label class="form-label small">Nombre</label>
+                        <input type="text" class="form-control form-control-sm" name="nombre" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Unidad</label>
+                        <select class="form-select form-select-sm" name="unidad" required>
+                            <option value="kg">kg</option>
+                            <option value="L">L</option>
+                            <option value="piezas">piezas</option>
+                            <option value="g">g</option>
+                            <option value="ml">ml</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Stock inicial</label>
+                        <input type="number" step="0.1" class="form-control form-control-sm" name="stock_actual" value="0">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Stock mínimo</label>
+                        <input type="number" step="0.1" class="form-control form-control-sm" name="stock_minimo" value="0">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Costo unitario ($)</label>
+                        <input type="number" step="0.01" class="form-control form-control-sm" name="costo_unitario" value="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-accent">Crear insumo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

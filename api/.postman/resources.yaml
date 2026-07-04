@@ -1,0 +1,7 @@
+workspace:
+  id: 32cb8aed-c15d-41ea-86c9-9b658a396ea0
+cloudResources:
+  collections:
+    ../postman/collections/CafeteriaPM API: 33008e0e-f5fa-405a-88d3-c04dcd10e242
+  environments:
+    ../postman/environments/CafeteriaPM Local.environment.yaml: 56372807-3a2f5320-3c7a-4182-8975-214f7d97cd1d

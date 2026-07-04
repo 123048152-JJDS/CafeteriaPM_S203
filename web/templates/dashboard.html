@@ -1,68 +1,122 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Resumen de la operación{% endblock %}
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h2>Panel de Control</h2>
-        <p>Bienvenido, {{ user_name }}.</p>
-        <hr>
-    </div>
-</div>
 
-<div class="row">
+<!-- KPIs -->
+<div class="row g-3 mb-4">
     <div class="col-md-3">
-        <div class="card text-bg-primary mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Ventas Hoy</h5>
-                <p class="card-text display-6">${{ "%.2f"|format(stats.get('ventas_hoy', 0)) }}</p>
-            </div>
+        <div class="kpi-card">
+            <div class="kpi-label"><i class="bi bi-currency-dollar"></i> Ventas hoy</div>
+            <div class="kpi-value">${{ "%.2f"|format(stats.get('ventas_hoy', 0)) }}</div>
+            <div class="kpi-delta up"><i class="bi bi-arrow-up-short"></i> +12%</div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-bg-warning mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Pedidos Activos</h5>
-                <p class="card-text display-6">{{ stats.get('pedidos_activos', 0) }}</p>
-            </div>
+        <div class="kpi-card">
+            <div class="kpi-label"><i class="bi bi-clock-history"></i> Pedidos activos</div>
+            <div class="kpi-value">{{ stats.get('pedidos_activos', 0) }}</div>
+            <div class="kpi-delta up"><i class="bi bi-arrow-up-short"></i> +8%</div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-bg-danger mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Stock Bajo</h5>
-                <p class="card-text display-6">{{ stats.get('stock_bajo', 0) }}</p>
-            </div>
+        <div class="kpi-card">
+            <div class="kpi-label"><i class="bi bi-exclamation-triangle"></i> Stock bajo</div>
+            <div class="kpi-value">{{ stats.get('stock_bajo', 0) }}</div>
+            <div class="kpi-delta down"><i class="bi bi-arrow-down-short"></i> Alertas</div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-bg-secondary mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Gastos Hoy</h5>
-                <p class="card-text display-6">${{ "%.2f"|format(stats.get('gastos_hoy', 0)) }}</p>
-            </div>
+        <div class="kpi-card">
+            <div class="kpi-label"><i class="bi bi-cash"></i> Gastos hoy</div>
+            <div class="kpi-value">${{ "%.2f"|format(stats.get('gastos_hoy', 0)) }}</div>
+            <div class="kpi-delta down"><i class="bi bi-arrow-down-short"></i> -5%</div>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5>🔥 Productos Más Vendidos</h5>
-            </div>
+<!-- Gráfica y Top productos -->
+<div class="row g-3">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
             <div class="card-body">
-                <ul class="list-group">
+                <h6 class="card-title d-flex justify-content-between align-items-center">
+                    Ventas diarias (últimos 7 días)
+                    <span class="badge bg-light text-muted fw-normal">Actualizado</span>
+                </h6>
+                <!-- Contenedor con altura fija -->
+                <div style="position: relative; height: 200px; width: 100%;">
+                    <canvas id="ventasChart" style="display: block; width: 100%; height: 100%;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="card-title">🔥 Productos más vendidos</h6>
+                {% if productos %}
                     {% for p in productos %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ p.nombre }}
-                            <span class="badge bg-primary rounded-pill">{{ p.total_vendido }} vendidos</span>
-                        </li>
-                    {% else %}
-                        <li class="list-group-item text-muted">No hay datos de ventas recientes.</li>
+                    <div class="rank-item d-flex align-items-center gap-2 small py-1 {% if not loop.last %}border-bottom{% endif %}">
+                        <span class="text-muted" style="min-width:18px;">{{ loop.index }}</span>
+                        <span class="flex-grow-1">{{ p.nombre }}</span>
+                        <div class="progress" style="width:60px;height:4px;">
+                            <div class="progress-bar" style="width:{{ (p.total_vendido / productos[0].total_vendido * 100) if productos else 0 }}%;background:#e6a17a;"></div>
+                        </div>
+                        <span class="fw-bold">{{ p.total_vendido }}</span>
+                    </div>
                     {% endfor %}
-                </ul>
+                {% else %}
+                    <p class="text-muted small">No hay datos de productos más vendidos.</p>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Obtener datos de ventas diarias desde el backend (ya están en la variable)
+    const ventasDiarias = {{ ventas_diarias|tojson }};
+    const labels = ventasDiarias.map(d => d.fecha);
+    const data = ventasDiarias.map(d => d.total);
+
+    const ctx = document.getElementById('ventasChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Ventas ($)',
+                data: data,
+                backgroundColor: '#2c3e66',
+                borderRadius: 4,
+                barPercentage: 0.6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,  // Permite que el canvas ocupe todo el contenedor
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#e9ecef' }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+});
+</script>
+
 {% endblock %}

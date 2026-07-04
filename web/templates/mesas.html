@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Mesas{% endblock %}
+{% block page_title %}Mesas{% endblock %}
+{% block page_subtitle %}Gestión de mesas del local{% endblock %}
+
+{% block content %}
+
+<!-- Resumen rápido -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-label"><i class="bi bi-table"></i> Total mesas</div>
+            <div class="kpi-value">{{ mesas|length }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-label"><i class="bi bi-check-circle text-success"></i> Disponibles</div>
+            <div class="kpi-value text-success">{{ mesas|selectattr('estado', 'equalto', 'disponible')|list|length }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-label"><i class="bi bi-person-fill text-warning"></i> Ocupadas</div>
+            <div class="kpi-value text-warning">{{ mesas|selectattr('estado', 'equalto', 'ocupada')|list|length }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-label"><i class="bi bi-clock text-danger"></i> Reservadas</div>
+            <div class="kpi-value text-danger">{{ mesas|selectattr('estado', 'equalto', 'reservada')|list|length }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Barra de herramientas -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex gap-2 flex-wrap">
+        <div class="input-group input-group-sm" style="max-width:200px;">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" placeholder="Buscar mesa..." id="buscarMesa" onkeyup="filtrarPorNumero()">
+        </div>
+        <select class="form-select form-select-sm" style="width:auto;" id="filtroEstado" onchange="aplicarFiltro()">
+            <option value="">Todos los estados</option>
+            <option value="disponible">Disponibles</option>
+            <option value="ocupada">Ocupadas</option>
+            <option value="reservada">Reservadas</option>
+        </select>
+    </div>
+    <button class="btn btn-sm btn-accent" data-bs-toggle="modal" data-bs-target="#nuevaMesaModal">
+        <i class="bi bi-plus-circle"></i> Nueva mesa
+    </button>
+</div>
+
+<!-- Tabla de mesas -->
+<div class="table-responsive">
+    <table class="table-custom" id="tablaMesas">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Número</th>
+                <th>Capacidad</th>
+                <th>Estado</th>
+                <th>Pedido activo</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mesa in mesas %}
+            <tr data-estado="{{ mesa.estado }}" data-numero="{{ mesa.numero }}">
+                <td>{{ mesa.id }}</td>
+                <td><strong>Mesa {{ mesa.numero }}</strong></td>
+                <td>{{ mesa.capacidad }} personas</td>
+                <td>
+                    {% if mesa.estado == 'disponible' %}
+                        <span class="badge-custom badge-success"><i class="bi bi-check-circle"></i> Disponible</span>
+                    {% elif mesa.estado == 'ocupada' %}
+                        <span class="badge-custom badge-warning"><i class="bi bi-person-fill"></i> Ocupada</span>
+                    {% elif mesa.estado == 'reservada' %}
+                        <span class="badge-custom badge-danger"><i class="bi bi-clock"></i> Reservada</span>
+                    {% else %}
+                        <span class="badge-custom badge-secondary">{{ mesa.estado }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if mesa.pedido_activo_id %}
+                        <a href="{{ url_for('pedidos') }}?mesa_id={{ mesa.id }}" class="text-primary">
+                            Pedido #{{ mesa.pedido_activo_id }}
+                        </a>
+                    {% else %}
+                        <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        {% if mesa.estado == 'disponible' %}
+                            <a href="{{ url_for('pedidos') }}?mesa_id={{ mesa.id }}&accion=ocupar" class="btn btn-sm btn-warning" title="Ocupar mesa">
+                                <i class="bi bi-person-fill"></i> Ocupar
+                            </a>
+                        {% elif mesa.estado == 'ocupada' %}
+                            <a href="{{ url_for('pedidos') }}?mesa_id={{ mesa.id }}&accion=liberar" class="btn btn-sm btn-success" title="Liberar mesa">
+                                <i class="bi bi-check-circle"></i> Liberar
+                            </a>
+                        {% endif %}
+                        <button class="btn btn-sm btn-outline-danger" 
+                                onclick="if(confirm('¿Eliminar esta mesa?')){ document.getElementById('delete-form-{{ mesa.id }}').submit(); }">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                        <form id="delete-form-{{ mesa.id }}" method="POST" action="{{ url_for('eliminar_mesa', mesa_id=mesa.id) }}" style="display:none;"></form>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center text-muted py-3">No hay mesas registradas.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Nueva Mesa -->
+<div class="modal fade" id="nuevaMesaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Nueva mesa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('crear_mesa') }}">
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <label class="form-label small">Número de mesa</label>
+                        <input type="number" class="form-control form-control-sm" name="numero" required min="1">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Capacidad (personas)</label>
+                        <input type="number" class="form-control form-control-sm" name="capacidad" required min="1" value="4">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-accent">Crear mesa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function aplicarFiltro() {
+    const estado = document.getElementById('filtroEstado').value;
+    const rows = document.querySelectorAll('#tablaMesas tbody tr');
+    rows.forEach(row => {
+        if (!estado || row.dataset.estado === estado) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function filtrarPorNumero() {
+    const busqueda = document.getElementById('buscarMesa').value.toLowerCase();
+    const rows = document.querySelectorAll('#tablaMesas tbody tr');
+    rows.forEach(row => {
+        const numero = row.dataset.numero || '';
+        if (numero.toString().includes(busqueda)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
+
+{% endblock %}

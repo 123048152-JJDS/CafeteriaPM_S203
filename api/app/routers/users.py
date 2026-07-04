@@ -86,26 +86,28 @@ def create_user(
 @router.patch("/{user_id}", response_model=UserOut)
 def update_user(
     user_id: int,
-    data:    UserUpdate,
-    db:      Session = Depends(get_db),
+    data: UserUpdate,
+    db: Session = Depends(get_db),
     _=Depends(require_roles("admin"))
 ):
-    """Actualiza parcialmente un usuario. Solo admin."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    if data.nombre   is not None: user.nombre        = data.nombre
-    if data.email    is not None:
+    if data.nombre is not None:
+        user.nombre = data.nombre
+    if data.email is not None:
         if db.query(User).filter(User.email == data.email, User.id != user_id).first():
             raise HTTPException(status_code=400, detail="El email ya está en uso")
         user.email = data.email
-    if data.password is not None: user.password_hash = hash_password(data.password)
-    if data.id_rol   is not None:
+    if data.password is not None:
+        user.password_hash = hash_password(data.password)
+    if data.id_rol is not None:
         if not db.query(Role).filter(Role.id == data.id_rol).first():
             raise HTTPException(status_code=400, detail="Rol no encontrado")
         user.id_rol = data.id_rol
-    if data.activo   is not None: user.activo        = data.activo
+    if data.activo is not None:
+        user.activo = data.activo
 
     db.commit()
     db.refresh(user)
