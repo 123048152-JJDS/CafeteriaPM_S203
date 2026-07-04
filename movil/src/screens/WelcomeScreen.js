@@ -1,11 +1,10 @@
 import React from 'react'
-import {
-  View,Text,StyleSheet,Pressable,SafeAreaView,Image,} from 'react-native'
+import { View, Text, StyleSheet, SafeAreaView, Image, Button } from 'react-native'
+import BotonPrimario from '../components/BotonPrimario'
 
-export default function WelcomeScreen({ navigation }) {
+export default function WelcomeScreen({ setScreen }) {
   return (
     <SafeAreaView style={styles.container}>
-
       <View style={styles.content}>
         <Image
           source={require('../../assets/logoCafe.png')}
@@ -14,16 +13,11 @@ export default function WelcomeScreen({ navigation }) {
         />
         <Text style={styles.title}>CafeteriaPM</Text>
         <Text style={styles.subtitle}>Gestión inteligente para tu negocio</Text>
-        <Pressable
-          style={styles.button}
-          onPress={() => navigation.navigate('Login')}
-        >
-          <Text style={styles.buttonText}>Iniciar sesión</Text>
-        </Pressable>
+        <BotonPrimario titulo="Iniciar sesión" />
       </View>
-
       <Text style={styles.footerText}>Welcome / Info app</Text>
 
+      <Button title="← Regresar al menú" onPress={() => setScreen('menu')} />
     </SafeAreaView>
   )
 }
@@ -56,19 +50,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#888888',
     textAlign: 'center',
-  },
-  button: {
-    backgroundColor: '#1F3864',
-    borderRadius: 14,
-    paddingVertical: 16,
-    width: '100%',
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   footerText: {
     color: '#aaaaaa',
