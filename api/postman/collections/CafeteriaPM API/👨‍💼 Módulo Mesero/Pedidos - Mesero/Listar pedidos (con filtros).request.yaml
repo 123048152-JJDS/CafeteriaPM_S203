@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{base_url}}/pedidos/?estado_id=1&mesa_id=1"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+queryParams:
+  estado_id: "1"
+  mesa_id: "1"
+order: 2000

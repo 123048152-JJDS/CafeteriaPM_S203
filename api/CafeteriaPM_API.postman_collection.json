@@ -1,0 +1,743 @@
+{
+	"info": {
+		"_postman_id": "cafeteriapm-api-collection",
+		"name": "CafeteriaPM API",
+		"description": "Colección de endpoints para el sistema de administración de cafetería",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "🔐 Autenticación",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@cafe.com\",\n    \"password\": \"Admin123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "👨‍🍳 Módulo Cocina",
+			"item": [
+				{
+					"name": "Productos",
+					"item": [
+						{
+							"name": "Listar productos",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/productos/",
+									"host": ["{{base_url}}"],
+									"path": ["productos", ""]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Crear producto",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Café Mocha\",\n    \"descripcion\": \"Café con chocolate\",\n    \"precio\": 70.00,\n    \"id_categoria\": 1,\n    \"disponible\": true,\n    \"ingredientes\": [\n        {\"id_ingrediente\": 1, \"cantidad\": 0.020},\n        {\"id_ingrediente\": 2, \"cantidad\": 0.150}\n    ]\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/productos/",
+									"host": ["{{base_url}}"],
+									"path": ["productos", ""]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Actualizar producto",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"precio\": 75.00,\n    \"disponible\": false\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/productos/1",
+									"host": ["{{base_url}}"],
+									"path": ["productos", "1"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Eliminar producto",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/productos/1",
+									"host": ["{{base_url}}"],
+									"path": ["productos", "1"]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Ingredientes",
+					"item": [
+						{
+							"name": "Listar ingredientes",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/productos/ingredientes",
+									"host": ["{{base_url}}"],
+									"path": ["productos", "ingredientes"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Crear ingrediente",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Canela\",\n    \"unidad\": \"kg\",\n    \"stock_actual\": 0.5,\n    \"stock_minimo\": 0.1,\n    \"costo_unitario\": 80.00\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/productos/ingredientes",
+									"host": ["{{base_url}}"],
+									"path": ["productos", "ingredientes"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Actualizar ingrediente",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"stock_actual\": 2.0\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/productos/ingredientes/1",
+									"host": ["{{base_url}}"],
+									"path": ["productos", "ingredientes", "1"]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Pedidos - Cocina",
+					"item": [
+						{
+							"name": "Cola de cocina",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/pedidos/cola-cocina",
+									"host": ["{{base_url}}"],
+									"path": ["pedidos", "cola-cocina"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Cambiar estado a 'en_preparacion'",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"id_estado_nuevo\": 2\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/pedidos/1/estado",
+									"host": ["{{base_url}}"],
+									"path": ["pedidos", "1", "estado"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Cambiar estado a 'listo' (descuenta inventario)",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"id_estado_nuevo\": 3\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/pedidos/1/estado",
+									"host": ["{{base_url}}"],
+									"path": ["pedidos", "1", "estado"]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "💰 Módulo Caja",
+			"item": [
+				{
+					"name": "Ventas",
+					"item": [
+						{
+							"name": "Listar ventas",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/ventas/",
+									"host": ["{{base_url}}"],
+									"path": ["ventas", ""]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Registrar venta (cobrar pedido)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"id_pedido\": 1,\n    \"id_metodo_pago\": 1,\n    \"monto_recibido\": 200.00\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/ventas/",
+									"host": ["{{base_url}}"],
+									"path": ["ventas", ""]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Gastos",
+					"item": [
+						{
+							"name": "Listar gastos",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/gastos/",
+									"host": ["{{base_url}}"],
+									"path": ["gastos", ""]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Registrar gasto",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"descripcion\": \"Compra de leche\",\n    \"monto\": 85.00,\n    \"id_categoria\": 4,\n    \"fecha\": \"2025-07-03\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/gastos/",
+									"host": ["{{base_url}}"],
+									"path": ["gastos", ""]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Compras de suministros",
+					"item": [
+						{
+							"name": "Listar compras",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/compras/",
+									"host": ["{{base_url}}"],
+									"path": ["compras", ""]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Registrar compra (incrementa stock)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"id_ingrediente\": 2,\n    \"cantidad\": 5.0,\n    \"costo_total\": 85.00,\n    \"fecha\": \"2025-07-03\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/compras/",
+									"host": ["{{base_url}}"],
+									"path": ["compras", ""]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "👨‍💼 Módulo Mesero",
+			"item": [
+				{
+					"name": "Mesas",
+					"item": [
+						{
+							"name": "Listar mesas (con estado)",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/mesas/",
+									"host": ["{{base_url}}"],
+									"path": ["mesas", ""]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Ver mesa por número",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/mesas/por-numero/1",
+									"host": ["{{base_url}}"],
+									"path": ["mesas", "por-numero", "1"]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Pedidos - Mesero",
+					"item": [
+						{
+							"name": "Crear pedido",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"id_mesa\": 1,\n    \"detalles\": [\n        {\n            \"id_producto\": 1,\n            \"cantidad\": 2,\n            \"observacion\": \"Sin azúcar\"\n        },\n        {\n            \"id_producto\": 2,\n            \"cantidad\": 1\n        }\n    ]\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/pedidos/",
+									"host": ["{{base_url}}"],
+									"path": ["pedidos", ""]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Listar pedidos (con filtros)",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/pedidos/?estado_id=1&mesa_id=1",
+									"host": ["{{base_url}}"],
+									"path": ["pedidos", ""],
+									"query": [
+										{
+											"key": "estado_id",
+											"value": "1"
+										},
+										{
+											"key": "mesa_id",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Cambiar estado a 'entregado'",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"id_estado_nuevo\": 4\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/pedidos/1/estado",
+									"host": ["{{base_url}}"],
+									"path": ["pedidos", "1", "estado"]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "📊 Administración",
+			"item": [
+				{
+					"name": "Usuarios",
+					"item": [
+						{
+							"name": "Listar usuarios",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/usuarios/",
+									"host": ["{{base_url}}"],
+									"path": ["usuarios", ""]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Crear usuario",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Nuevo Mesero\",\n    \"email\": \"nuevo@cafe.com\",\n    \"password\": \"mesero123\",\n    \"id_rol\": 4,\n    \"activo\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/usuarios/",
+									"host": ["{{base_url}}"],
+									"path": ["usuarios", ""]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Editar usuario",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Ana García Actualizada\",\n    \"activo\": false\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/usuarios/2",
+									"host": ["{{base_url}}"],
+									"path": ["usuarios", "2"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Eliminar usuario",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/usuarios/2",
+									"host": ["{{base_url}}"],
+									"path": ["usuarios", "2"]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Estadísticas",
+					"item": [
+						{
+							"name": "Dashboard (resumen)",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/stats/dashboard",
+									"host": ["{{base_url}}"],
+									"path": ["stats", "dashboard"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Resumen del mes",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/stats/resumen-mes",
+									"host": ["{{base_url}}"],
+									"path": ["stats", "resumen-mes"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Productos más vendidos",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/stats/productos-mas-vendidos?limit=10",
+									"host": ["{{base_url}}"],
+									"path": ["stats", "productos-mas-vendidos"],
+									"query": [
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	]
+}

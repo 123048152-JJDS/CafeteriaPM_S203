@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
+from sqlalchemy import cast, String  # ← Nuevas importaciones
+
 from app.core.database import get_db
 from app.core.security import get_current_user, require_roles
 from app.models.order import Order, OrderDetail, OrderDetailObservation, OrderStatus, OrderStatusHistory
@@ -15,6 +17,7 @@ from app.schemas.order import (
 )
 
 router = APIRouter()
+
 
 
 # ══════════════════════════════════════════════════════════════
@@ -32,22 +35,60 @@ def get_estados(db: Session = Depends(get_db), _=Depends(get_current_user)):
 @router.get("/", response_model=List[OrderOut])
 def get_pedidos(
     estado_id: Optional[int] = None,
-    mesa_id:   Optional[int] = None,
-    db:        Session = Depends(get_db),
+    mesa_id: Optional[int] = None,
+    fecha_inicio: Optional[str] = None,
+    fecha_fin: Optional[str] = None,
+    busqueda: Optional[str] = None,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+    db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """Lista pedidos. Filtros opcionales: ?estado_id=1&mesa_id=2"""
+    """
+    Lista pedidos con filtros avanzados:
+    - estado_id: ID del estado
+    - mesa_id: ID de la mesa
+    - fecha_inicio: YYYY-MM-DD
+    - fecha_fin: YYYY-MM-DD
+    - busqueda: texto para buscar en ID del pedido o número de mesa
+    - limit: número máximo de resultados
+    - offset: número de resultados a saltar (para paginación)
+    """
     q = db.query(Order)
+    
     if estado_id:
         q = q.filter(Order.id_estado_actual == estado_id)
     if mesa_id:
         q = q.filter(Order.id_mesa == mesa_id)
+    if fecha_inicio:
+        try:
+            fecha_dt = datetime.fromisoformat(fecha_inicio)
+            q = q.filter(Order.created_at >= fecha_dt)
+        except ValueError:
+            pass
+    if fecha_fin:
+        try:
+            fecha_dt = datetime.fromisoformat(fecha_fin) + timedelta(days=1)
+            q = q.filter(Order.created_at < fecha_dt)
+        except ValueError:
+            pass
+    if busqueda:
+        if busqueda.isdigit():
+            q = q.filter(Order.id == int(busqueda))
+        else:
+            q = q.join(Order.mesa).filter(cast(Table.numero, String).ilike(f"%{busqueda}%"))
+    
+    # Aplicar límite y offset si existen
+    if limit is not None:
+        q = q.limit(limit)
+    if offset is not None:
+        q = q.offset(offset)
+    
     return q.order_by(Order.created_at.desc()).all()
 
 
 @router.get("/cola-cocina", response_model=List[OrderOut])
 def get_cola_cocina(db: Session = Depends(get_db), _=Depends(get_current_user)):
-    """Pedidos que están pendientes o en preparación (para la cocina)."""
     estados = db.query(OrderStatus).filter(
         OrderStatus.nombre.in_(["pendiente", "en_preparacion"])
     ).all()

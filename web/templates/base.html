@@ -1,52 +1,140 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cafetería PM - {% block title %}Panel{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('dashboard') }}">☕ Cafetería PM</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-                    {% if session.user_role == 'admin' %}
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('usuarios') }}"><i class="bi bi-people"></i> Usuarios</a></li>
-                    {% endif %}
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('estadisticas') }}"><i class="bi bi-bar-chart"></i> Estadísticas</a></li>
-                </ul>
-                <span class="navbar-text me-3 text-light">
-                    <i class="bi bi-person-circle"></i> {{ user_name }} ({{ session.user_role }})
-                </span>
-                <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm">Cerrar sesión</a>
-            </div>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    {% block head_extra %}{% endblock %}
+  </head>
+  <body>
+    <div class="wrapper">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="brand-icon"><i class="bi bi-cup-hot"></i></div>
+          <div>
+            <div class="brand-name">CafeteriaPM</div>
+            <div class="brand-sub">Panel administración</div>
+          </div>
         </div>
-    </nav>
+        <nav class="sidebar-nav">
+          <div class="nav-section">General</div>
+          <a
+            href="{{ url_for('dashboard') }}"
+            class="nav-link-custom {% if request.endpoint == 'dashboard' %}active{% endif %}"
+          >
+            <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+          </a>
+          <a
+            href="{{ url_for('pedidos') }}"
+            class="nav-link-custom {% if request.endpoint == 'pedidos' %}active{% endif %}"
+          >
+            <i class="bi bi-receipt"></i> <span>Pedidos</span>
+          </a>
+          <div class="nav-section">Administración</div>
+          <a
+            href="{{ url_for('usuarios') }}"
+            class="nav-link-custom {% if request.endpoint == 'usuarios' %}active{% endif %}"
+          >
+            <i class="bi bi-people"></i> <span>Usuarios</span>
+          </a>
+          <a
+            href="{{ url_for('mesas') }}"
+            class="nav-link-custom {% if request.endpoint == 'mesas' %}active{% endif %}"
+          >
+            <i class="bi bi-table"></i> <span>Mesas</span>
+          </a>
+          <a
+            href="{{ url_for('menu') }}"
+            class="nav-link-custom {% if request.endpoint == 'menu' %}active{% endif %}"
+          >
+            <i class="bi bi-menu-app"></i> <span>Menú</span>
+          </a>
+          <a
+            href="{{ url_for('inventario') }}"
+            class="nav-link-custom {% if request.endpoint == 'inventario' %}active{% endif %}"
+          >
+            <i class="bi bi-box-seam"></i> <span>Inventario</span>
+          </a>
+          <div class="nav-section">Reportes</div>
+          <a
+            href="{{ url_for('estadisticas') }}"
+            class="nav-link-custom {% if request.endpoint == 'estadisticas' %}active{% endif %}"
+          >
+            <i class="bi bi-bar-chart"></i> <span>Estadísticas</span>
+          </a>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="avatar">
+            {{ session.user_name[:1] if session.user_name else 'U' }}
+          </div>
+          <div>
+            <div class="user-name">{{ session.user_name or 'Usuario' }}</div>
+            <div class="user-role">{{ session.user_role or 'Sin rol' }}</div>
+          </div>
+          <a
+            href="{{ url_for('logout') }}"
+            class="btn btn-sm btn-outline-danger ms-auto"
+            title="Cerrar sesión"
+          >
+            <i class="bi bi-box-arrow-right"></i>
+          </a>
+        </div>
+      </aside>
 
-    <div class="container mt-4">
+      <!-- Contenido principal -->
+      <main class="main-content">
+        <div class="topbar">
+          <div>
+            <div class="page-title">
+              {% block page_title %}Dashboard{% endblock %}
+            </div>
+            <div class="page-subtitle">
+              {% block page_subtitle %}Resumen general{% endblock %}
+            </div>
+          </div>
+          <div>
+            <span class="text-muted small"
+              ><i class="bi bi-calendar3"></i> Hoy: {{ now|default('') }}</span
+            >
+          </div>
+        </div>
+
         <!-- Mensajes flash -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        {% block content %}
-        {% endblock %}
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %} {% for category, message in messages %}
+        <div
+          class="alert alert-{{ category }} alert-dismissible fade show"
+          role="alert"
+        >
+          {{ message }}
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="alert"
+          ></button>
+        </div>
+        {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock %}
+      </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+    {% block scripts %}{% endblock %}
+  </body>
 </html>

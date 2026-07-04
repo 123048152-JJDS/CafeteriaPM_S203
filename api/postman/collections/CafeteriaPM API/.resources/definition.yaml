@@ -1,0 +1,6 @@
+$kind: collection
+name: CafeteriaPM API
+description: Colección de endpoints para el sistema de administración de cafetería
+variables:
+  base_url: http://localhost:8000
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sIjoiYWRtaW4iLCJleHAiOjE3ODMxNDg5MjB9.QwrwrXT9KhwKik8q_JUUATe2NWhSb8QrJSqAcs7vTP4

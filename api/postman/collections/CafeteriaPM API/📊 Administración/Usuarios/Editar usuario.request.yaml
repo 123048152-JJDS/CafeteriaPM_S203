@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/usuarios/2"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "nombre": "Ana García Actualizada",
+        "activo": false
+    }
+order: 3000
