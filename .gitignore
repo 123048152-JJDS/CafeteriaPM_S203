@@ -53,3 +53,7 @@ __pycache__/
 
 estructura.txt
 sql/
+
+
+postman/
+.postman/
