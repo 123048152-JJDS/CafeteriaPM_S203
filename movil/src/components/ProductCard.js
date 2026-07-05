@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
-import { COLORS } from "../styles/colors";
 
 export default function ProductCard({ nombre, categoria, precio }) {
   return (
@@ -23,57 +22,48 @@ export default function ProductCard({ nombre, categoria, precio }) {
 }
 
 const styles = StyleSheet.create({
-
   card: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.white,
+    backgroundColor: "#ffffff",
     borderRadius: 15,
     padding: 12,
     marginBottom: 15,
     elevation: 3,
   },
-
   imagen: {
     width: 65,
     height: 65,
     backgroundColor: "#D9D9D9",
     borderRadius: 10,
   },
-
   info: {
     flex: 1,
     marginLeft: 15,
   },
-
   nombre: {
     fontSize: 17,
     fontWeight: "bold",
-    color: COLORS.text,
+    color: "#333333",
   },
-
   categoria: {
-    color: COLORS.gray,
+    color: "#9E9E9E",
     marginTop: 3,
   },
-
   precio: {
-    color: COLORS.primary,
+    color: "#243B74",
     fontWeight: "bold",
     marginTop: 8,
     fontSize: 16,
   },
-
   boton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: "#243B74",
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 8,
   },
-
   textoBoton: {
-    color: COLORS.white,
+    color: "#ffffff",
     fontWeight: "bold",
   },
-
 });

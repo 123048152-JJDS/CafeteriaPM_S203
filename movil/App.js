@@ -1,142 +1,57 @@
-import { StatusBar } from "expo-status-bar";
-import { SafeAreaView, StyleSheet, Text, Pressable } from "react-native";
-import { useState } from "react";
+import { StatusBar } from 'expo-status-bar'
+import { StyleSheet, Text, View, Button, SafeAreaView, ScrollView } from 'react-native'
+import React, { useState } from 'react'
 
-import MenuScreen from "./screens/MenuScreen";
-
-import MenuCocinaScreen from "./cocina/MenuCocinaScreen";
-import NuevoProductoScreen from "./cocina/NuevoProductoScreen";
-import InventarioScreen from "./cocina/InventarioScreen";
-import RegistrarCompraScreen from "./cocina/RegistrarCompraScreen";
-import PedidosScreen from "./cocina/PedidosScreen";
-import DetallePedidoScreen from "./cocina/DetallePedidoScreen";
+import CocinaPedidosScreen from './src/screens/CocinaPedidosScreen'
+import CocinaDetallePedidoScreen from './src/screens/CocinaDetallePedidoScreen'
+import CocinaInventarioScreen from './src/screens/CocinaInventarioScreen'
+import CocinaRegistrarCompraScreen from './src/screens/CocinaRegistrarCompraScreen'
+import CocinaMenuScreen from './src/screens/CocinaMenuScreen'
+import CocinaNuevoProductoScreen from './src/screens/CocinaNuevoProductoScreen'
 
 export default function App() {
-
-  const [screen, setScreen] = useState("menu");
+  const [screen, setScreen] = useState('menu')
 
   switch (screen) {
-
-    case "menuCocina":
-      return <MenuCocinaScreen setScreen={setScreen} />;
-
-    case "nuevoProducto":
-      return <NuevoProductoScreen setScreen={setScreen} />;
-
-    case "inventario":
-      return <InventarioScreen setScreen={setScreen} />;
-
-    case "registrarCompra":
-      return <RegistrarCompraScreen setScreen={setScreen} />;
-
-    case "pedidos":
-      return <PedidosScreen setScreen={setScreen} />;
-
-    case "detallePedido":
-      return <DetallePedidoScreen setScreen={setScreen} />;
-
-    case "menu":
+    case 'cocinaPedidos':      return <CocinaPedidosScreen setScreen={setScreen} />
+    case 'cocinaDetalle':      return <CocinaDetallePedidoScreen setScreen={setScreen} />
+    case 'cocinaInventario':   return <CocinaInventarioScreen setScreen={setScreen} />
+    case 'cocinaRegistrar':    return <CocinaRegistrarCompraScreen setScreen={setScreen} />
+    case 'cocinaMenu':         return <CocinaMenuScreen setScreen={setScreen} />
+    case 'cocinaNuevo':        return <CocinaNuevoProductoScreen setScreen={setScreen} />
+    case 'menu':
     default:
-
       return (
-
         <SafeAreaView style={styles.container}>
-
-          <Text style={styles.titulo}>
-            Módulo Cocina
-          </Text>
-
-          <Pressable
-            style={styles.boton}
-            onPress={() => setScreen("menuCocina")}
-          >
-            <Text style={styles.texto}>
-              Menú
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={styles.boton}
-            onPress={() => setScreen("nuevoProducto")}
-          >
-            <Text style={styles.texto}>
-              Nuevo Producto
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={styles.boton}
-            onPress={() => setScreen("inventario")}
-          >
-            <Text style={styles.texto}>
-              Inventario
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={styles.boton}
-            onPress={() => setScreen("registrarCompra")}
-          >
-            <Text style={styles.texto}>
-              Registrar Compra
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={styles.boton}
-            onPress={() => setScreen("pedidos")}
-          >
-            <Text style={styles.texto}>
-              Pedidos
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={styles.boton}
-            onPress={() => setScreen("detallePedido")}
-          >
-            <Text style={styles.texto}>
-              Detalle Pedido
-            </Text>
-          </Pressable>
-
-          <StatusBar style="auto" />
-
+          <ScrollView contentContainerStyle={styles.scroll}>
+            <Text style={styles.titulo}>Módulo Cocina</Text>
+            <Button onPress={() => setScreen('cocinaPedidos')}    title="Cola de Pedidos" />
+            <Button onPress={() => setScreen('cocinaDetalle')}    title="Detalle de Pedido" />
+            <Button onPress={() => setScreen('cocinaInventario')} title="Inventario" />
+            <Button onPress={() => setScreen('cocinaRegistrar')}  title="Registrar Compra" />
+            <Button onPress={() => setScreen('cocinaMenu')}       title="Menú" />
+            <Button onPress={() => setScreen('cocinaNuevo')}      title="Nuevo Producto" />
+            <StatusBar style="auto" />
+          </ScrollView>
         </SafeAreaView>
-
-      );
-
+      )
   }
-
 }
 
 const styles = StyleSheet.create({
-
-  container:{
-    flex:1,
-    backgroundColor:"#fff",
-    justifyContent:"space-evenly",
-    padding:20,
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
   },
-
-  titulo:{
-    fontSize:28,
-    fontWeight:"bold",
-    color:"#243B74",
-    textAlign:"center",
+  scroll: {
+    padding: 24,
+    gap: 8,
   },
-
-  boton:{
-    backgroundColor:"#243B74",
-    padding:16,
-    borderRadius:10,
+  titulo: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1F3864',
+    textAlign: 'center',
+    marginBottom: 16,
   },
-
-  texto:{
-    color:"white",
-    fontWeight:"bold",
-    textAlign:"center",
-    fontSize:17,
-  }
-
-});
+})
