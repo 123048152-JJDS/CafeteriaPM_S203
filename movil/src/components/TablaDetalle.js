@@ -12,10 +12,7 @@ export default function TablaDetalle({ columnas, datos }) {
       {datos.map((fila, i) => (
         <View key={i} style={styles.tablaFila}>
           {columnas.map((col, j) => (
-            <Text
-              key={j}
-              style={[styles.celda, { flex: col.flex || 1 }, fila.color && j === columnas.length - 1 && { color: fila.color }]}
-            >
+            <Text key={j} style={[styles.celda, { flex: col.flex || 1 }]}>
               {fila[col.key]}
             </Text>
           ))}
