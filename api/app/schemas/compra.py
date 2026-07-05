@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import date, datetime
-from app.schemas.ingredient import IngredientOut
+from app.schemas.product import IngredientOut  
 from app.schemas.user import UserOut
 
 class CompraCreate(BaseModel):

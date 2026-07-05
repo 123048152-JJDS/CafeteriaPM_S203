@@ -4,8 +4,10 @@ from typing import List
 from app.core.database import get_db
 from app.core.security import get_current_user, require_roles
 from app.models.expense import Purchase
-from app.models.ingredient import Ingredient
+from app.models.ingredient import Ingredient  # ← Importación correcta
 from app.schemas.compra import CompraCreate, CompraOut
+from app.schemas.product import IngredientOut
+from app.schemas.user import UserOut
 
 router = APIRouter(prefix="/compras", tags=["Compras"])
 
@@ -38,7 +40,14 @@ def create_compra(
     db.commit()
 
     db.refresh(compra)
-    compra.ingrediente = ingrediente
-    compra.usuario = current_user
 
-    return compra
+    return CompraOut(
+        id=compra.id,
+        id_ingrediente=compra.id_ingrediente,
+        ingrediente=IngredientOut.model_validate(ingrediente),
+        usuario=UserOut.model_validate(current_user),
+        cantidad=compra.cantidad,
+        costo_total=compra.costo_total,
+        fecha=compra.fecha,
+        created_at=compra.created_at
+    )

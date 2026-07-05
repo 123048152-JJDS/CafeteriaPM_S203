@@ -475,7 +475,7 @@ def editar_ingrediente(ingrediente_id):
 @login_required
 def ajustar_stock(ingrediente_id):
     cantidad = request.form.get("cantidad")
-    tipo = request.form.get("tipo", "sumar")  # sumar o restar
+    tipo = request.form.get("tipo", "sumar")
 
     if not cantidad:
         flash("Cantidad no especificada", "warning")
@@ -716,6 +716,59 @@ def crear_ingrediente():
             error_msg = res.json().get("detail", error_msg)
         flash(error_msg, "danger")
     return redirect(url_for('inventario'))
+
+@app.route("/productos/editar/<int:producto_id>", methods=["POST"])
+@login_required
+def editar_producto(producto_id):
+    nombre = request.form.get("nombre")
+    descripcion = request.form.get("descripcion")
+    precio = request.form.get("precio")
+    id_categoria = request.form.get("id_categoria")
+    disponible = request.form.get("disponible") == "on"
+
+    if not nombre or not precio:
+        flash("Nombre y precio son obligatorios", "warning")
+        return redirect(url_for('menu'))
+
+    payload = {
+        "nombre": nombre,
+        "descripcion": descripcion or "",
+        "precio": float(precio),
+        "id_categoria": int(id_categoria) if id_categoria else None,
+        "disponible": disponible,
+    }
+    res = api_request("PATCH", f"/productos/{producto_id}", json=payload)
+    if res and res.status_code == 200:
+        flash("Producto actualizado correctamente", "success")
+    else:
+        error_msg = "Error al actualizar el producto."
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('menu'))
+
+
+@app.route("/productos/eliminar/<int:producto_id>", methods=["POST"])
+@login_required
+def eliminar_producto(producto_id):
+    res = api_request("DELETE", f"/productos/{producto_id}")
+    if res and res.status_code == 204:
+        flash("Producto eliminado correctamente", "success")
+    else:
+        flash("No se pudo eliminar el producto", "danger")
+    return redirect(url_for('menu'))
+
+
+@app.route("/productos/toggle/<int:producto_id>", methods=["POST"])
+@login_required
+def toggle_producto(producto_id):
+    res = api_request("PATCH", f"/productos/{producto_id}/toggle")
+    if res and res.status_code == 200:
+        estado = "activado" if res.json().get("disponible") else "desactivado"
+        flash(f"Producto {estado} correctamente", "success")
+    else:
+        flash("Error al cambiar el estado del producto", "danger")
+    return redirect(url_for('menu'))
 
 @app.route("/proxy/reporte-productos/pdf")
 @login_required

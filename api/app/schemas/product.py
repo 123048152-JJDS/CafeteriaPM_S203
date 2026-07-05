@@ -11,14 +11,14 @@ class CategoryOut(BaseModel):
 
 class CategoryCreate(BaseModel):
     nombre: str
-    tipo:   str  # producto | gasto | ambos
+    tipo:   str
 
 class IngredientOut(BaseModel):
-    id:             int
-    nombre:         str
-    unidad:         str
-    stock_actual:   float
-    stock_minimo:   float
+    id: int
+    nombre: str
+    unidad: str
+    stock_actual: float
+    stock_minimo: float
     costo_unitario: float
     model_config = {"from_attributes": True}
 
