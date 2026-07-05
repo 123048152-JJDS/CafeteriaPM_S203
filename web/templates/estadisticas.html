@@ -8,6 +8,7 @@
 
 {% block content %}
 
+<!-- Filtros de fecha y botones de descarga dinámicos -->
 <div class="row g-2 mb-3 align-items-end">
     <div class="col-auto">
         <label class="form-label small">Desde</label>
@@ -21,39 +22,41 @@
         <button class="btn btn-sm btn-primary-custom" onclick="aplicarFiltros()">Aplicar</button>
     </div>
     <div class="col text-end">
-        <a href="{{ url_for('proxy_pdf') }}" class="btn btn-sm btn-outline-danger"><i class="bi bi-file-pdf"></i> PDF</a>
-        <a href="{{ url_for('proxy_xlsx') }}" class="btn btn-sm btn-success"><i class="bi bi-file-excel"></i> XLSX</a>
+        <a href="{{ descargas.pdf }}" class="btn btn-sm btn-outline-danger"><i class="bi bi-file-pdf"></i> PDF</a>
+        <a href="{{ descargas.xlsx }}" class="btn btn-sm btn-success"><i class="bi bi-file-excel"></i> XLSX</a>
     </div>
 </div>
 
+<!-- Pestañas (mantienen filtros) -->
 <ul class="nav nav-tabs mb-3" id="estadisticasTabs" role="tablist">
     <li class="nav-item" role="presentation">
         <a class="nav-link {% if tab_activa == 'ventas' %}active{% endif %}" 
-           href="{{ url_for('estadisticas', tab='ventas') }}" 
+           href="{{ url_for('estadisticas', tab='ventas', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin) }}" 
            role="tab">Ventas</a>
     </li>
     <li class="nav-item" role="presentation">
         <a class="nav-link {% if tab_activa == 'gastos' %}active{% endif %}" 
-           href="{{ url_for('estadisticas', tab='gastos') }}" 
+           href="{{ url_for('estadisticas', tab='gastos', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin) }}" 
            role="tab">Gastos</a>
     </li>
     <li class="nav-item" role="presentation">
         <a class="nav-link {% if tab_activa == 'productos' %}active{% endif %}" 
-           href="{{ url_for('estadisticas', tab='productos') }}" 
+           href="{{ url_for('estadisticas', tab='productos', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin) }}" 
            role="tab">Productos</a>
     </li>
     <li class="nav-item" role="presentation">
         <a class="nav-link {% if tab_activa == 'inventario' %}active{% endif %}" 
-           href="{{ url_for('estadisticas', tab='inventario') }}" 
+           href="{{ url_for('estadisticas', tab='inventario', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin) }}" 
            role="tab">Inventario</a>
     </li>
     <li class="nav-item" role="presentation">
         <a class="nav-link {% if tab_activa == 'historial' %}active{% endif %}" 
-           href="{{ url_for('estadisticas', tab='historial') }}" 
+           href="{{ url_for('estadisticas', tab='historial', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin) }}" 
            role="tab">Historial</a>
     </li>
 </ul>
 
+<!-- ========================== PESTAÑA VENTAS ========================== -->
 <div id="tab-ventas" class="tab-pane {% if tab_activa == 'ventas' %}active{% endif %}">
     <div class="row g-3 mb-4">
         <div class="col-md-3">
@@ -135,6 +138,7 @@
     </div>
 </div>
 
+<!-- ========================== PESTAÑA GASTOS ========================== -->
 <div id="tab-gastos" class="tab-pane {% if tab_activa == 'gastos' %}active{% endif %}">
     <div class="row g-3 mb-4">
         <div class="col-md-3">
@@ -162,6 +166,19 @@
                     <span class="text-success">Ventas: ${{ "%.2f"|format(resumen.get('total_ventas', 0)) }}</span>
                     <span class="text-danger ms-3">Gastos: ${{ "%.2f"|format(resumen.get('gastos_totales', 0)) }}</span>
                     <span class="text-primary ms-3">Balance: ${{ "%.2f"|format(resumen.get('total_ventas', 0) - resumen.get('gastos_totales', 0)) }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">Gastos diarios (últimos 7 días)</h6>
+                    <div style="position: relative; height: 200px; width: 100%;">
+                        <canvas id="gastosChart" style="display: block; width: 100%; height: 100%;"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -204,19 +221,7 @@
     </div>
 </div>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-12">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <h6 class="card-title">Gastos diarios (últimos 7 días)</h6>
-                <div style="position: relative; height: 200px; width: 100%;">
-                    <canvas id="gastosChart" style="display: block; width: 100%; height: 100%;"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
+<!-- ========================== PESTAÑA PRODUCTOS ========================== -->
 <div id="tab-productos" class="tab-pane {% if tab_activa == 'productos' %}active{% endif %}">
     <div class="row g-3">
         <div class="col-md-6">
@@ -291,6 +296,7 @@
     </div>
 </div>
 
+<!-- ========================== PESTAÑA INVENTARIO ========================== -->
 <div id="tab-inventario" class="tab-pane {% if tab_activa == 'inventario' %}active{% endif %}">
     <div class="row g-3 mb-4">
         <div class="col-md-4">
@@ -375,6 +381,7 @@
     </div>
 </div>
 
+<!-- ========================== PESTAÑA HISTORIAL ========================== -->
 <div id="tab-historial" class="tab-pane {% if tab_activa == 'historial' %}active{% endif %}">
     <div class="row g-3">
         <div class="col-md-4">
@@ -437,18 +444,18 @@ function aplicarFiltros() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Gráfica de Ventas
     const ventasDiarias = {{ ventas_diarias|tojson }};
-    const labels = ventasDiarias.map(d => d.fecha);
-    const data = ventasDiarias.map(d => d.total);
+    const ventasLabels = ventasDiarias.map(d => d.fecha);
+    const ventasData = ventasDiarias.map(d => d.total);
 
-    const ctx = document.getElementById('ventasChart').getContext('2d');
-    new Chart(ctx, {
+    new Chart(document.getElementById('ventasChart'), {
         type: 'bar',
         data: {
-            labels: labels,
+            labels: ventasLabels,
             datasets: [{
                 label: 'Ventas ($)',
-                data: data,
+                data: ventasData,
                 backgroundColor: '#2c3e66',
                 borderRadius: 4,
                 barPercentage: 0.6,
@@ -464,10 +471,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-});
-</script>
 
-<script>
+    // Gráfica de Gastos
     const gastosDiarios = {{ gastos_diarios|tojson }};
     const gastosLabels = gastosDiarios.map(d => d.fecha);
     const gastosData = gastosDiarios.map(d => d.total);
@@ -494,6 +499,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+});
 </script>
 
 {% endblock %}
