@@ -34,7 +34,7 @@ def create_categoria(
 
 @router.get("/ingredientes", response_model=List[IngredientOut])
 def get_ingredientes(db: Session = Depends(get_db), _=Depends(get_current_user)):
-    return db.query(Ingredient).all()
+    return db.query(Ingredient).order_by(Ingredient.id.asc()).all()
 
 @router.get("/ingredientes/stock-bajo", response_model=List[IngredientOut])
 def get_stock_bajo(db: Session = Depends(get_db), _=Depends(get_current_user)):
@@ -193,3 +193,23 @@ def toggle_disponible(
     db.commit()
     db.refresh(prod)
     return prod
+
+@router.patch("/ingredientes/{id}/ajustar-stock")
+def ajustar_stock_ingrediente(
+    id: int,
+    cantidad: float,
+    db: Session = Depends(get_db),
+    _=Depends(require_roles("admin", "cocina"))
+):
+    ing = db.query(Ingredient).filter(Ingredient.id == id).first()
+    if not ing:
+        raise HTTPException(404, "Ingrediente no encontrado")
+    
+    nuevo_stock = float(ing.stock_actual) + cantidad
+    if nuevo_stock < 0:
+        raise HTTPException(400, "El stock no puede ser negativo")
+    
+    ing.stock_actual = nuevo_stock
+    db.commit()
+    db.refresh(ing)
+    return {"message": "Stock actualizado", "stock_actual": float(ing.stock_actual)}

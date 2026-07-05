@@ -1,10 +1,12 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.core.database import get_db
 from app.core.security import get_current_user, require_roles
 from app.models.table import Table
-from app.models.order import Order, OrderStatus
+from app.models.order import Order, OrderStatus, OrderStatusHistory
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/mesas", tags=["Mesas"])
@@ -25,7 +27,7 @@ class MesaOut(BaseModel):
 
 def get_estado_mesa(db: Session, mesa_id: int):
     estados_activos = db.query(OrderStatus).filter(
-        OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo", "entregado"])
+        OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo", "entregado", "reservado"])
     ).all()
     ids_activos = [e.id for e in estados_activos]
 
@@ -35,7 +37,10 @@ def get_estado_mesa(db: Session, mesa_id: int):
     ).first()
 
     if pedido_activo:
-        return "ocupada", pedido_activo.id
+        if pedido_activo.estado_actual.nombre == "reservado":
+            return "reservada", pedido_activo.id
+        else:
+            return "ocupada", pedido_activo.id
     return "disponible", None
 
 @router.get("/", response_model=List[MesaOut])
@@ -128,3 +133,142 @@ def delete_mesa(
     
     db.delete(mesa)
     db.commit()
+    
+@router.patch("/{mesa_id}/ocupar")
+def ocupar_mesa(
+    mesa_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_roles("admin", "mesero"))
+):
+    mesa = db.query(Table).filter(Table.id == mesa_id).first()
+    if not mesa:
+        raise HTTPException(404, "Mesa no encontrada")
+
+    estados_activos = db.query(OrderStatus).filter(
+        OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo", "entregado"])
+    ).all()
+    ids_activos = [e.id for e in estados_activos]
+    pedido_activo = db.query(Order).filter(
+        Order.id_mesa == mesa_id,
+        Order.id_estado_actual.in_(ids_activos)
+    ).first()
+    if pedido_activo:
+        raise HTTPException(400, "La mesa ya está ocupada")
+
+    estado_pendiente = db.query(OrderStatus).filter(OrderStatus.nombre == "pendiente").first()
+    if not estado_pendiente:
+        raise HTTPException(500, "Estado 'pendiente' no configurado")
+
+    pedido = Order(
+        id_mesa=mesa_id,
+        id_mesero=current_user.id,
+        id_estado_actual=estado_pendiente.id,
+    )
+    db.add(pedido)
+    db.commit()
+    db.refresh(pedido)
+
+    return {"message": "Mesa ocupada correctamente", "pedido_id": pedido.id}
+
+@router.patch("/{mesa_id}/liberar")
+def liberar_mesa(
+    mesa_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_roles("admin", "mesero", "caja"))
+):
+    mesa = db.query(Table).filter(Table.id == mesa_id).first()
+    if not mesa:
+        raise HTTPException(404, "Mesa no encontrada")
+
+    estados_activos = db.query(OrderStatus).filter(
+        OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo", "entregado"])
+    ).all()
+    ids_activos = [e.id for e in estados_activos]
+    pedido_activo = db.query(Order).filter(
+        Order.id_mesa == mesa_id,
+        Order.id_estado_actual.in_(ids_activos)
+    ).first()
+
+    if not pedido_activo:
+        raise HTTPException(400, "La mesa no tiene pedido activo")
+
+    estado_pagado = db.query(OrderStatus).filter(OrderStatus.nombre == "pagado").first()
+    if not estado_pagado:
+        raise HTTPException(500, "Estado 'pagado' no configurado")
+
+    pedido_activo.id_estado_actual = estado_pagado.id
+    pedido_activo.updated_at = datetime.now()
+
+    historial = OrderStatusHistory(
+        id_pedido=pedido_activo.id,
+        id_estado_origen=pedido_activo.id_estado_actual,
+        id_estado_destino=estado_pagado.id,
+        id_usuario=current_user.id,
+    )
+    db.add(historial)
+    db.commit()
+
+    return {"message": "Mesa liberada correctamente", "pedido_id": pedido_activo.id}
+
+@router.patch("/{mesa_id}/reservar")
+def reservar_mesa(
+    mesa_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_roles("admin", "mesero"))
+):
+    mesa = db.query(Table).filter(Table.id == mesa_id).first()
+    if not mesa:
+        raise HTTPException(404, "Mesa no encontrada")
+
+    estado, _ = get_estado_mesa(db, mesa.id)
+    if estado != "disponible":
+        raise HTTPException(400, "La mesa no está disponible para reservar")
+
+    estado_reservado = db.query(OrderStatus).filter(OrderStatus.nombre == "reservado").first()
+    if not estado_reservado:
+        raise HTTPException(500, "Estado 'reservado' no configurado")
+
+    pedido = Order(
+        id_mesa=mesa_id,
+        id_mesero=current_user.id,
+        id_estado_actual=estado_reservado.id,
+    )
+    db.add(pedido)
+    db.commit()
+    db.refresh(pedido)
+
+    return {"message": "Mesa reservada correctamente", "pedido_id": pedido.id}
+
+
+@router.patch("/{mesa_id}/cancelar-reserva")
+def cancelar_reserva(
+    mesa_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_roles("admin", "mesero"))
+):
+    mesa = db.query(Table).filter(Table.id == mesa_id).first()
+    if not mesa:
+        raise HTTPException(404, "Mesa no encontrada")
+
+    estado_reservado = db.query(OrderStatus).filter(OrderStatus.nombre == "reservado").first()
+    if not estado_reservado:
+        raise HTTPException(500, "Estado 'reservado' no configurado")
+
+    pedido_reservado = db.query(Order).filter(
+        Order.id_mesa == mesa_id,
+        Order.id_estado_actual == estado_reservado.id
+    ).first()
+
+    if not pedido_reservado:
+        raise HTTPException(400, "La mesa no tiene una reserva activa")
+
+    estado_cancelado = db.query(OrderStatus).filter(OrderStatus.nombre == "cancelado").first()
+    if estado_cancelado:
+        pedido_reservado.id_estado_actual = estado_cancelado.id
+        pedido_reservado.updated_at = datetime.now()
+        db.commit()
+    else:
+        db.delete(pedido_reservado)
+        db.commit()
+
+    return {"message": "Reserva cancelada correctamente"}

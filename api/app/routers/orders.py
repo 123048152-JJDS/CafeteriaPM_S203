@@ -1,8 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from typing import List, Optional
+import io
 from datetime import datetime, timedelta
-from sqlalchemy import cast, String  # ← Nuevas importaciones
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import Response
+from sqlalchemy import cast, String
+from sqlalchemy.orm import Session
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
 
 from app.core.database import get_db
 from app.core.security import get_current_user, require_roles
@@ -34,36 +44,56 @@ def get_pedidos(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    q = db.query(Order)
-    
-    if estado_id:
-        q = q.filter(Order.id_estado_actual == estado_id)
-    if mesa_id:
-        q = q.filter(Order.id_mesa == mesa_id)
-    if fecha_inicio:
-        try:
-            fecha_dt = datetime.fromisoformat(fecha_inicio)
-            q = q.filter(Order.created_at >= fecha_dt)
-        except ValueError:
-            pass
-    if fecha_fin:
-        try:
-            fecha_dt = datetime.fromisoformat(fecha_fin) + timedelta(days=1)
-            q = q.filter(Order.created_at < fecha_dt)
-        except ValueError:
-            pass
-    if busqueda:
-        if busqueda.isdigit():
-            q = q.filter(Order.id == int(busqueda))
-        else:
-            q = q.join(Order.mesa).filter(cast(Table.numero, String).ilike(f"%{busqueda}%"))
-    
-    if limit is not None:
-        q = q.limit(limit)
-    if offset is not None:
-        q = q.offset(offset)
-    
-    return q.order_by(Order.created_at.desc()).all()
+    try:
+        q = db.query(Order)
+        if estado_id:
+            q = q.filter(Order.id_estado_actual == estado_id)
+        if mesa_id:
+            q = q.filter(Order.id_mesa == mesa_id)
+        if fecha_inicio:
+            try:
+                fecha_dt = datetime.fromisoformat(fecha_inicio)
+                q = q.filter(Order.created_at >= fecha_dt)
+            except ValueError:
+                pass
+        if fecha_fin:
+            try:
+                fecha_dt = datetime.fromisoformat(fecha_fin) + timedelta(days=1)
+                q = q.filter(Order.created_at < fecha_dt)
+            except ValueError:
+                pass
+        if busqueda:
+            if busqueda.isdigit():
+                q = q.filter(Order.id == int(busqueda))
+            else:
+                q = q.join(Table, Order.id_mesa == Table.id).filter(
+                    cast(Table.numero, String).ilike(f"%{busqueda}%")
+                )
+
+        q = q.order_by(Order.id.desc())
+
+        if limit is not None:
+            q = q.limit(limit)
+        if offset is not None:
+            q = q.offset(offset)
+
+        resultado = q.all()
+        print(f"[DEBUG] Pedidos obtenidos: {len(resultado)}")
+
+        for pedido in resultado:
+            total = 0.0
+            for detalle in pedido.detalles:
+                total += float(detalle.precio_unitario) * detalle.cantidad
+            pedido.total = total
+
+        return resultado
+
+    except Exception as e:
+        print(f"[ERROR] en get_pedidos: {type(e).__name__}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error interno: {type(e).__name__}: {str(e)}"
+        )
 
 @router.get("/cola-cocina", response_model=List[OrderOut])
 def get_cola_cocina(db: Session = Depends(get_db), _=Depends(get_current_user)):
@@ -85,7 +115,7 @@ def get_pedido(pedido_id: int, db: Session = Depends(get_db), _=Depends(get_curr
 @router.post("/", response_model=OrderOut, status_code=201)
 def create_pedido(
     data: OrderCreate,
-    db:   Session = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user = Depends(require_roles("mesero", "admin"))
 ):
     mesa = db.query(Table).filter(Table.id == data.id_mesa).first()
@@ -106,7 +136,6 @@ def create_pedido(
     db.add(pedido)
     db.flush()
 
-    total = 0.0
     for item in data.detalles:
         producto = db.query(Product).filter(Product.id == item.id_producto).first()
         if not producto:
@@ -115,9 +144,6 @@ def create_pedido(
             raise HTTPException(400, f"Producto '{producto.nombre}' no está disponible")
 
         precio_unitario = float(producto.precio)
-        subtotal = precio_unitario * item.cantidad
-        total += subtotal
-
         detalle = OrderDetail(
             id_pedido=pedido.id,
             id_producto=item.id_producto,
@@ -151,7 +177,7 @@ def create_pedido(
 def cambiar_estado(
     pedido_id: int,
     data: OrderStatusChange,
-    db:   Session = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     pedido = db.query(Order).filter(Order.id == pedido_id).first()
@@ -213,3 +239,74 @@ def delete_pedido(
         raise HTTPException(400, "Solo se pueden eliminar pedidos cancelados")
     db.delete(pedido)
     db.commit()
+
+@router.get("/{pedido_id}/ticket/pdf")
+def generar_ticket_pdf(
+    pedido_id: int,
+    db: Session = Depends(get_db),
+    _=Depends(require_roles("admin", "caja", "mesero"))
+):
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    import io
+
+    pedido = db.query(Order).filter(Order.id == pedido_id).first()
+    if not pedido:
+        raise HTTPException(404, "Pedido no encontrado")
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    elements.append(Paragraph("CafeteriaPM - Ticket de Venta", styles['Title']))
+    elements.append(Spacer(1, 0.2 * inch))
+
+    info = f"<b>Pedido #{pedido.id}</b> | Mesa {pedido.mesa.numero if pedido.mesa else 'N/A'} | Fecha: {pedido.created_at.strftime('%d/%m/%Y %H:%M')}"
+    elements.append(Paragraph(info, styles['Normal']))
+    elements.append(Spacer(1, 0.1 * inch))
+
+    data = [["Cant", "Producto", "Precio", "Subtotal"]]
+    total = 0.0
+    for detalle in pedido.detalles:
+        subtotal = float(detalle.precio_unitario) * detalle.cantidad
+        total += subtotal
+        data.append([
+            str(detalle.cantidad),
+            detalle.producto.nombre if detalle.producto else "N/A",
+            f"${float(detalle.precio_unitario):.2f}",
+            f"${subtotal:.2f}"
+        ])
+    data.append(["", "", "TOTAL", f"${total:.2f}"])
+
+    tabla = Table(data)
+    tabla.setStyle(TableStyle([
+        ('COLWIDTH', (0, 0), (0, -1), 0.8 * inch),
+        ('COLWIDTH', (1, 0), (1, -1), 2.5 * inch),
+        ('COLWIDTH', (2, 0), (2, -1), 1.2 * inch),
+        ('COLWIDTH', (3, 0), (3, -1), 1.2 * inch),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('GRID', (0, 0), (-1, -2), 1, colors.black),
+        ('BACKGROUND', (0, -1), (-1, -1), colors.lightgrey),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+    ]))
+    elements.append(tabla)
+    elements.append(Spacer(1, 0.2 * inch))
+
+    elements.append(Paragraph("¡Gracias por su visita!", styles['Normal']))
+
+    doc.build(elements)
+    buffer.seek(0)
+
+    return Response(
+        buffer.getvalue(),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=ticket_pedido_{pedido_id}.pdf"}
+    )

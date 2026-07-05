@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from app.core.database import get_db
 from app.core.security import get_current_user, require_roles, hash_password
 from app.models.user import User
@@ -14,15 +14,29 @@ def get_roles(
     db: Session = Depends(get_db),
     _=Depends(require_roles("admin"))
 ):
-    """Lista todos los roles disponibles."""
     return db.query(Role).all()
 
 @router.get("/", response_model=List[UserOut])
 def get_users(
-    db:  Session = Depends(get_db),
+    search: Optional[str] = None,
+    rol_id: Optional[int] = None,
+    activo: Optional[bool] = None,
+    db: Session = Depends(get_db),
     _=Depends(require_roles("admin"))
 ):
-    return db.query(User).all()
+    q = db.query(User)
+    
+    if search:
+        q = q.filter(
+            (User.nombre.ilike(f"%{search}%")) | 
+            (User.email.ilike(f"%{search}%"))
+        )
+    if rol_id:
+        q = q.filter(User.id_rol == rol_id)
+    if activo is not None:
+        q = q.filter(User.activo == activo)
+    
+    return q.all()
 
 @router.get("/me", response_model=UserOut)
 def get_me(current_user=Depends(get_current_user)):

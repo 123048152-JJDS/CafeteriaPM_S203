@@ -101,7 +101,6 @@ def login():
             print(f"[ERROR] {e}")
     return render_template("login.html")
 
-
 @app.route("/logout")
 def logout():
     session.clear()
@@ -135,10 +134,22 @@ def dashboard():
 @app.route("/usuarios", methods=["GET", "POST"])
 @login_required
 def usuarios():
-    res_users = api_request("GET", "/usuarios/")
-    res_roles = api_request("GET", "/usuarios/roles")
+    busqueda = request.args.get('busqueda')
+    rol_id = request.args.get('rol_id', type=int)
+    activo = request.args.get('activo')
 
+    params = {}
+    if busqueda:
+        params['search'] = busqueda
+    if rol_id:
+        params['rol_id'] = rol_id
+    if activo is not None and activo != '':
+        params['activo'] = activo.lower() == 'true'
+
+    res_users = api_request("GET", "/usuarios/", params=params)
     users = res_users.json() if res_users and res_users.status_code == 200 else []
+
+    res_roles = api_request("GET", "/usuarios/roles")
     roles = res_roles.json() if res_roles and res_roles.status_code == 200 else []
 
     if request.method == "POST":
@@ -172,6 +183,9 @@ def usuarios():
         "usuarios.html",
         users=users,
         roles=roles,
+        busqueda_seleccionada=busqueda,
+        rol_seleccionado=rol_id,
+        estado_seleccionado=activo,
         user_name=session.get('user_name'),
         user_role=session.get('user_role')
     )
@@ -350,6 +364,39 @@ def pedidos():
         user_role=session.get('user_role')
     )
 
+
+@app.route("/pedidos/cambiar-estado/<int:pedido_id>", methods=["POST"])
+@login_required
+def cambiar_estado_pedido(pedido_id):
+    id_estado_nuevo = request.form.get("id_estado_nuevo", type=int)
+    if not id_estado_nuevo:
+        flash("Estado no especificado", "warning")
+        return redirect(url_for('pedidos'))
+
+    res = api_request("PATCH", f"/pedidos/{pedido_id}/estado", json={"id_estado_nuevo": id_estado_nuevo})
+    if res and res.status_code == 200:
+        flash("Estado actualizado correctamente", "success")
+    else:
+        error_msg = "Error al actualizar el estado"
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('pedidos'))
+
+
+@app.route("/proxy/ticket/<int:pedido_id>/pdf")
+@login_required
+def proxy_ticket_pdf(pedido_id):
+    res = api_request("GET", f"/pedidos/{pedido_id}/ticket/pdf")
+    if res and res.status_code == 200:
+        return Response(
+            res.content,
+            content_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=ticket_pedido_{pedido_id}.pdf"}
+        )
+    flash("Error al generar el ticket", "danger")
+    return redirect(url_for('pedidos'))
+
 @app.route("/menu")
 @login_required
 def menu():
@@ -364,10 +411,14 @@ def menu():
     res_cat = api_request("GET", "/productos/categorias")
     categorias = res_cat.json() if res_cat and res_cat.status_code == 200 else []
 
+    res_ing = api_request("GET", "/productos/ingredientes")
+    ingredientes = res_ing.json() if res_ing and res_ing.status_code == 200 else []
+
     return render_template(
         "menu.html",
         productos=productos,
         categorias=categorias,
+        ingredientes=ingredientes,
         user_name=session.get('user_name'),
         user_role=session.get('user_role')
     )
@@ -388,6 +439,79 @@ def inventario():
         user_name=session.get('user_name'),
         user_role=session.get('user_role')
     )
+    
+@app.route("/inventario/editar/<int:ingrediente_id>", methods=["POST"])
+@login_required
+def editar_ingrediente(ingrediente_id):
+    nombre = request.form.get("nombre")
+    unidad = request.form.get("unidad")
+    stock_actual = request.form.get("stock_actual")
+    stock_minimo = request.form.get("stock_minimo")
+    costo_unitario = request.form.get("costo_unitario")
+
+    payload = {}
+    if nombre:
+        payload["nombre"] = nombre
+    if unidad:
+        payload["unidad"] = unidad
+    if stock_actual is not None and stock_actual != '':
+        payload["stock_actual"] = float(stock_actual)
+    if stock_minimo is not None and stock_minimo != '':
+        payload["stock_minimo"] = float(stock_minimo)
+    if costo_unitario is not None and costo_unitario != '':
+        payload["costo_unitario"] = float(costo_unitario)
+
+    res = api_request("PATCH", f"/productos/ingredientes/{ingrediente_id}", json=payload)
+    if res and res.status_code == 200:
+        flash("Ingrediente actualizado correctamente", "success")
+    else:
+        error_msg = "Error al actualizar el ingrediente."
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('inventario'))
+
+@app.route("/inventario/ajustar-stock/<int:ingrediente_id>", methods=["POST"])
+@login_required
+def ajustar_stock(ingrediente_id):
+    cantidad = request.form.get("cantidad")
+    tipo = request.form.get("tipo", "sumar")  # sumar o restar
+
+    if not cantidad:
+        flash("Cantidad no especificada", "warning")
+        return redirect(url_for('inventario'))
+
+    try:
+        cantidad = float(cantidad)
+    except ValueError:
+        flash("Cantidad inválida", "danger")
+        return redirect(url_for('inventario'))
+
+    if tipo == "restar":
+        cantidad = -cantidad
+
+    res = api_request("PATCH", f"/productos/ingredientes/{ingrediente_id}/ajustar-stock?cantidad={cantidad}")
+    if res and res.status_code == 200:
+        flash(f"Stock actualizado correctamente. Nuevo stock: {res.json().get('stock_actual')}", "success")
+    else:
+        error_msg = "Error al ajustar el stock."
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('inventario'))
+
+@app.route("/inventario/eliminar/<int:ingrediente_id>", methods=["POST"])
+@login_required
+def eliminar_ingrediente(ingrediente_id):
+    res = api_request("DELETE", f"/productos/ingredientes/{ingrediente_id}")
+    if res and res.status_code == 204:
+        flash("Ingrediente eliminado correctamente", "success")
+    else:
+        error_msg = "No se pudo eliminar el ingrediente. Puede estar siendo usado por un producto."
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('inventario'))
 
 @app.route("/mesas")
 @login_required
@@ -438,6 +562,63 @@ def eliminar_mesa(mesa_id):
         flash(error_msg, "danger")
     return redirect(url_for('mesas'))
 
+@app.route("/mesas/ocupar/<int:mesa_id>", methods=["POST"])
+@login_required
+def ocupar_mesa(mesa_id):
+    res = api_request("PATCH", f"/mesas/{mesa_id}/ocupar")
+    if res and res.status_code == 200:
+        data = res.json()
+        flash(f"Mesa ocupada correctamente. Pedido #{data.get('pedido_id')}", "success")
+    else:
+        error_msg = "Error al ocupar la mesa."
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('mesas'))
+
+
+@app.route("/mesas/liberar/<int:mesa_id>", methods=["POST"])
+@login_required
+def liberar_mesa(mesa_id):
+    res = api_request("PATCH", f"/mesas/{mesa_id}/liberar")
+    if res and res.status_code == 200:
+        data = res.json()
+        flash(f"Mesa liberada correctamente. Pedido #{data.get('pedido_id')} cerrado.", "success")
+    else:
+        error_msg = "Error al liberar la mesa."
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('mesas'))
+
+@app.route("/mesas/reservar/<int:mesa_id>", methods=["POST"])
+@login_required
+def reservar_mesa(mesa_id):
+    res = api_request("PATCH", f"/mesas/{mesa_id}/reservar")
+    if res and res.status_code == 200:
+        data = res.json()
+        flash(f"Mesa reservada correctamente. Reserva #{data.get('pedido_id')}", "success")
+    else:
+        error_msg = "Error al reservar la mesa."
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('mesas'))
+
+
+@app.route("/mesas/cancelar-reserva/<int:mesa_id>", methods=["POST"])
+@login_required
+def cancelar_reserva(mesa_id):
+    res = api_request("PATCH", f"/mesas/{mesa_id}/cancelar-reserva")
+    if res and res.status_code == 200:
+        flash("Reserva cancelada correctamente", "success")
+    else:
+        error_msg = "Error al cancelar la reserva."
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('mesas'))
+
 @app.route("/productos/crear", methods=["POST"])
 @login_required
 def crear_producto():
@@ -446,10 +627,18 @@ def crear_producto():
     precio = request.form.get("precio")
     id_categoria = request.form.get("id_categoria")
     disponible = request.form.get("disponible") == "on"
+    ingredientes_ids = request.form.getlist("ingredientes")
 
     if not nombre or not precio:
         flash("Nombre y precio son obligatorios", "warning")
         return redirect(url_for('menu'))
+
+    ingredientes_payload = []
+    for ing_id in ingredientes_ids:
+        ingredientes_payload.append({
+            "id_ingrediente": int(ing_id),
+            "cantidad": 1.0 
+        })
 
     payload = {
         "nombre": nombre,
@@ -458,7 +647,7 @@ def crear_producto():
         "id_categoria": int(id_categoria) if id_categoria else None,
         "disponible": disponible,
         "imagen_url": None,
-        "ingredientes": []
+        "ingredientes": ingredientes_payload
     }
     res = api_request("POST", "/productos/", json=payload)
     if res and res.status_code == 201:

@@ -9,20 +9,20 @@
     <div class="d-flex gap-2 flex-wrap">
         <div class="input-group input-group-sm" style="max-width:200px;">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
-            <input type="text" class="form-control" placeholder="Buscar producto...">
+            <input type="text" class="form-control" placeholder="Buscar producto..." id="buscarProducto" onkeyup="filtrarMenu()">
         </div>
-        <select class="form-select form-select-sm" style="width:auto;">
+        <select class="form-select form-select-sm" style="width:auto;" id="filtroCategoria" onchange="filtrarMenu()">
             <option value="">Categoría</option>
             {% for cat in categorias %}
                 <option value="{{ cat.id }}">{{ cat.nombre }}</option>
             {% endfor %}
         </select>
-        <select class="form-select form-select-sm" style="width:auto;">
+        <select class="form-select form-select-sm" style="width:auto;" id="filtroDisponible" onchange="filtrarMenu()">
             <option value="">Disponibilidad</option>
             <option value="true">Activos</option>
             <option value="false">Inactivos</option>
         </select>
-        <button class="btn btn-sm btn-primary-custom">Filtrar</button>
+        <button class="btn btn-sm btn-primary-custom" onclick="filtrarMenu()">Filtrar</button>
     </div>
     <button class="btn btn-sm btn-accent" data-bs-toggle="modal" data-bs-target="#nuevoProductoModal">
         <i class="bi bi-plus-circle"></i> Nuevo producto
@@ -30,7 +30,7 @@
 </div>
 
 <div class="table-responsive">
-    <table class="table-custom">
+    <table class="table-custom" id="tablaMenu">
         <thead>
             <tr>
                 <th>Producto</th>
@@ -42,7 +42,7 @@
         </thead>
         <tbody>
             {% for prod in productos %}
-            <tr>
+            <tr data-nombre="{{ prod.nombre|lower }}" data-categoria="{{ prod.categoria.id if prod.categoria else '' }}" data-disponible="{{ prod.disponible|lower }}">
                 <td>{{ prod.nombre }}</td>
                 <td>{{ prod.categoria.nombre if prod.categoria else 'Sin categoría' }}</td>
                 <td>${{ "%.2f"|format(prod.precio) }}</td>
@@ -67,8 +67,27 @@
     </table>
 </div>
 
+<script>
+function filtrarMenu() {
+    const busqueda = document.getElementById('buscarProducto').value.toLowerCase();
+    const categoria = document.getElementById('filtroCategoria').value;
+    const disponible = document.getElementById('filtroDisponible').value;
+    const rows = document.querySelectorAll('#tablaMenu tbody tr');
+    rows.forEach(row => {
+        const nombre = row.dataset.nombre || '';
+        const rowCategoria = row.dataset.categoria || '';
+        const rowDisponible = row.dataset.disponible || '';
+        let mostrar = true;
+        if (busqueda && !nombre.includes(busqueda)) mostrar = false;
+        if (categoria && rowCategoria !== categoria) mostrar = false;
+        if (disponible && rowDisponible !== disponible) mostrar = false;
+        row.style.display = mostrar ? '' : 'none';
+    });
+}
+</script>
+
 <div class="modal fade" id="nuevoProductoModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Nuevo producto</h5>
@@ -98,8 +117,13 @@
                         </select>
                     </div>
                     <div class="mb-2">
-                        <label class="form-label small">Ingredientes (IDs separados por coma)</label>
-                        <input type="text" class="form-control form-control-sm" placeholder="1,2,3" name="ingredientes">
+                        <label class="form-label small">Ingredientes</label>
+                        <select class="form-select form-select-sm" name="ingredientes" multiple size="4">
+                            {% for ing in ingredientes %}
+                                <option value="{{ ing.id }}">{{ ing.nombre }} ({{ ing.unidad }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text small">Mantén presionada la tecla Ctrl (o Cmd en Mac) para seleccionar varios.</div>
                     </div>
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" id="disponible" name="disponible" checked>

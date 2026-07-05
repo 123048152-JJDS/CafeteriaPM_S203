@@ -24,6 +24,7 @@ def seed_estados(db):
         ("entregado",        "Pedido entregado al cliente",              "mesero"),
         ("pagado",           "Pedido pagado (cerrado)",                  "caja"),
         ("cancelado",        "Pedido cancelado",                         "caja"),
+        ("reservado",        "Mesa reservada para cliente",              "mesero"), 
     ]
 
     for nombre, desc, rol_nombre in estados:
