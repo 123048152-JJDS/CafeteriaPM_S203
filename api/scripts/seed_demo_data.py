@@ -22,17 +22,13 @@ from app.models.expense import Expense, Purchase
 from app.models.ingredient import Ingredient
 from app.models.product import Category
 
-
-# ── Configuración ──────────────────────────────────────────────
 NUM_MESAS = 10
 NUM_MESEROS = 3
 NUM_COCINEROS = 2
 NUM_CAJEROS = 2
 NUM_PEDIDOS = 25
-DIAS_ATRAS = 7  # Pedidos de los últimos 7 días
+DIAS_ATRAS = 7  
 
-
-# ── Helpers ──────────────────────────────────────────────────
 def get_or_create_role(db, nombre):
     role = db.query(Role).filter(Role.nombre == nombre).first()
     if not role:
@@ -41,7 +37,6 @@ def get_or_create_role(db, nombre):
         db.commit()
         db.refresh(role)
     return role
-
 
 def get_or_create_user(db, nombre, email, password, rol_nombre):
     user = db.query(User).filter(User.email == email).first()
@@ -62,7 +57,6 @@ def get_or_create_user(db, nombre, email, password, rol_nombre):
     db.refresh(user)
     return user
 
-
 def get_or_create_table(db, numero, capacidad):
     table = db.query(Table).filter(Table.numero == numero).first()
     if table:
@@ -73,16 +67,12 @@ def get_or_create_table(db, numero, capacidad):
     db.refresh(table)
     return table
 
-
-# ── Main ─────────────────────────────────────────────────────
 def seed_demo_data():
     db = SessionLocal()
     try:
-        print("🌱 Generando datos de demostración...")
-
-        # ─── 1. USUARIOS ADICIONALES ────────────────────────
-        print("  📋 Creando usuarios...")
-        # Meseros
+        print("Generando datos de demostración...")
+        print("Creando usuarios...")
+        
         meseros = [
             ("Ana García", "ana@cafe.com", "mesero123", "mesero"),
             ("Luis Martínez", "luis@cafe.com", "mesero123", "mesero"),
@@ -91,7 +81,6 @@ def seed_demo_data():
         for nombre, email, pwd, rol in meseros:
             get_or_create_user(db, nombre, email, pwd, rol)
 
-        # Cocineros
         cocineros = [
             ("Carlos Sánchez", "carlos@cafe.com", "cocina123", "cocina"),
             ("Elena Pérez", "elena@cafe.com", "cocina123", "cocina"),
@@ -99,7 +88,6 @@ def seed_demo_data():
         for nombre, email, pwd, rol in cocineros:
             get_or_create_user(db, nombre, email, pwd, rol)
 
-        # Cajeros
         cajeros = [
             ("Juan Fernández", "juan@cafe.com", "caja123", "caja"),
             ("Laura Gómez", "laura@cafe.com", "caja123", "caja"),
@@ -109,8 +97,7 @@ def seed_demo_data():
 
         print(f"Usuarios creados: {len(meseros) + len(cocineros) + len(cajeros)}")
 
-        # ─── 2. MESAS ────────────────────────────────────────
-        print("  🪑 Creando mesas...")
+        print("Creando mesas...")
         mesas = []
         for i in range(1, NUM_MESAS + 1):
             capacidad = random.choice([2, 4, 4, 6, 8])
@@ -118,9 +105,7 @@ def seed_demo_data():
             mesas.append(mesa)
         print(f"   {len(mesas)} mesas creadas")
 
-        # ─── 3. PEDIDOS ──────────────────────────────────────
-        print("  📦 Creando pedidos...")
-        # Obtener referencias necesarias
+        print("Creando pedidos...")
         estados = {e.nombre: e for e in db.query(OrderStatus).all()}
         productos = db.query(Product).filter(Product.disponible == True).all()
         usuarios_mesero = db.query(User).join(Role).filter(Role.nombre == "mesero").all()
@@ -128,29 +113,25 @@ def seed_demo_data():
         usuarios_caja = db.query(User).join(Role).filter(Role.nombre == "caja").all()
 
         if not productos:
-            print("    ⚠️  No hay productos. Ejecuta seed_productos.py primero.")
+            print("No hay productos. Ejecuta seed_productos.py primero.")
             return
         if not estados:
-            print("    ⚠️  No hay estados. Ejecuta seed_estados.py primero.")
+            print("No hay estados. Ejecuta seed_estados.py primero.")
             return
 
         pedidos_creados = 0
         hoy = date.today()
 
         for i in range(NUM_PEDIDOS):
-            # Seleccionar mesa y mesero aleatorio
             mesa = random.choice(mesas)
             mesero = random.choice(usuarios_mesero)
 
-            # Fecha aleatoria en los últimos DIAS_ATRAS días
             dias_atras = random.randint(0, DIAS_ATRAS)
             fecha_creacion = datetime.combine(hoy - timedelta(days=dias_atras), datetime.min.time()) + timedelta(
                 hours=random.randint(8, 22),
                 minutes=random.randint(0, 59)
             )
 
-            # Elegir estado (distribución realista)
-            # 20% pendiente, 30% en_preparacion, 20% listo, 30% pagado
             rand = random.random()
             if rand < 0.20:
                 estado_nombre = "pendiente"
@@ -168,7 +149,6 @@ def seed_demo_data():
             if not estado_obj:
                 continue
 
-            # Crear pedido
             pedido = Order(
                 id_mesa=mesa.id,
                 id_mesero=mesero.id,
@@ -179,8 +159,6 @@ def seed_demo_data():
             db.add(pedido)
             db.flush()
 
-            # ─── 4. DETALLES DEL PEDIDO ──────────────────────
-            # Seleccionar entre 1 y 5 productos aleatorios
             num_items = random.randint(1, 5)
             productos_seleccionados = random.sample(productos, min(num_items, len(productos)))
             for prod in productos_seleccionados:
@@ -194,10 +172,7 @@ def seed_demo_data():
                 db.add(detalle)
                 db.flush()
 
-            # ─── 5. HISTORIAL DE ESTADOS ─────────────────────
-            # Simular cambios de estado a lo largo del tiempo
             if estado_nombre in ["en_preparacion", "listo", "pagado"]:
-                # De pendiente a en_preparacion (después de 2-10 minutos)
                 tiempo1 = fecha_creacion + timedelta(minutes=random.randint(2, 10))
                 historial1 = OrderStatusHistory(
                     id_pedido=pedido.id,
@@ -209,7 +184,6 @@ def seed_demo_data():
                 db.add(historial1)
 
                 if estado_nombre in ["listo", "pagado"]:
-                    # De en_preparacion a listo (después de 5-20 minutos)
                     tiempo2 = tiempo1 + timedelta(minutes=random.randint(5, 20))
                     historial2 = OrderStatusHistory(
                         id_pedido=pedido.id,
@@ -221,7 +195,6 @@ def seed_demo_data():
                     db.add(historial2)
 
                     if estado_nombre == "pagado":
-                        # De listo a pagado (después de 1-10 minutos)
                         tiempo3 = tiempo2 + timedelta(minutes=random.randint(1, 10))
                         historial3 = OrderStatusHistory(
                             id_pedido=pedido.id,
@@ -237,19 +210,16 @@ def seed_demo_data():
                 else:
                     pedido.updated_at = tiempo1
             else:
-                # Si queda pendiente, no hay historial adicional
                 pedido.updated_at = fecha_creacion
 
             db.commit()
             pedidos_creados += 1
 
-            # ─── 6. VENTA (solo para pedidos pagados) ─────────
             if estado_nombre == "pagado":
                 metodos_pago = db.query(PaymentMethod).all()
                 if metodos_pago:
                     metodo = random.choice(metodos_pago)
                     cajero = random.choice(usuarios_caja)
-                    # Calcular total
                     total = sum(float(d.subtotal or 0) for d in pedido.detalles)
                     monto_recibido = total if random.random() < 0.7 else total + random.randint(1, 50)
                     venta = Sale(
@@ -265,7 +235,6 @@ def seed_demo_data():
 
         print(f"{pedidos_creados} pedidos creados")
 
-        # ─── 7. GASTOS ────────────────────────────────────────
         print(" Creando gastos...")
         categorias_gasto = db.query(Category).filter(Category.tipo.in_(["gasto", "ambos"])).all()
         usuarios = db.query(User).all()
@@ -289,8 +258,7 @@ def seed_demo_data():
             gastos_creados += 1
         print(f"{gastos_creados} gastos creados")
 
-        # ─── 8. COMPRAS DE SUMINISTROS ──────────────────────
-        print("  🛒 Creando compras de suministros...")
+        print("Creando compras de suministros...")
         ingredientes = db.query(Ingredient).all()
         usuarios = db.query(User).all()
         compras_creadas = 0
@@ -325,7 +293,6 @@ def seed_demo_data():
         raise
     finally:
         db.close()
-
 
 if __name__ == "__main__":
     seed_demo_data()

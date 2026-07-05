@@ -31,13 +31,9 @@ SessionLocal = sessionmaker(
     bind=engine,
 )
 
-
-# SQLAlchemy 2.0
 class Base(DeclarativeBase):
     pass
 
-
-# ── Dependencia FastAPI ───────────────────────────────────────
 def get_db():
     db = SessionLocal()
     try:
@@ -45,8 +41,6 @@ def get_db():
     finally:
         db.close()
 
-
-# ── Verificar conexión al arrancar ────────────────────────────
 def verify_connection():
     try:
         with engine.connect() as conn:

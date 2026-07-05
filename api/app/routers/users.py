@@ -9,11 +9,6 @@ from app.schemas.user import UserCreate, UserUpdate, UserOut, RoleOut
 
 router = APIRouter()
 
-
-# ══════════════════════════════════════════════════════════════
-#  ROLES
-# ══════════════════════════════════════════════════════════════
-
 @router.get("/roles", response_model=List[RoleOut])
 def get_roles(
     db: Session = Depends(get_db),
@@ -22,25 +17,16 @@ def get_roles(
     """Lista todos los roles disponibles."""
     return db.query(Role).all()
 
-
-# ══════════════════════════════════════════════════════════════
-#  USUARIOS
-# ══════════════════════════════════════════════════════════════
-
 @router.get("/", response_model=List[UserOut])
 def get_users(
     db:  Session = Depends(get_db),
     _=Depends(require_roles("admin"))
 ):
-    """Lista todos los usuarios. Solo admin."""
     return db.query(User).all()
-
 
 @router.get("/me", response_model=UserOut)
 def get_me(current_user=Depends(get_current_user)):
-    """Devuelve el usuario autenticado actual."""
     return current_user
-
 
 @router.get("/{user_id}", response_model=UserOut)
 def get_user(
@@ -53,19 +39,15 @@ def get_user(
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return user
 
-
 @router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def create_user(
     data: UserCreate,
     db:   Session = Depends(get_db),
     _=Depends(require_roles("admin"))
 ):
-    """Crea un nuevo usuario. Solo admin."""
-    # Verificar email duplicado
     if db.query(User).filter(User.email == data.email).first():
         raise HTTPException(status_code=400, detail="El email ya está registrado")
 
-    # Verificar que el rol existe
     role = db.query(Role).filter(Role.id == data.id_rol).first()
     if not role:
         raise HTTPException(status_code=400, detail="Rol no encontrado")
@@ -81,7 +63,6 @@ def create_user(
     db.commit()
     db.refresh(user)
     return user
-
 
 @router.patch("/{user_id}", response_model=UserOut)
 def update_user(
@@ -113,14 +94,12 @@ def update_user(
     db.refresh(user)
     return user
 
-
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
     user_id:      int,
     db:           Session = Depends(get_db),
     current_user=Depends(require_roles("admin"))
 ):
-    """Elimina un usuario. Solo admin. No puede eliminarse a sí mismo."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")

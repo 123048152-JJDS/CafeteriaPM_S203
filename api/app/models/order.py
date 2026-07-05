@@ -4,7 +4,6 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
 
-
 class OrderStatus(Base):
     __tablename__ = "estados_pedido"
 
@@ -13,7 +12,6 @@ class OrderStatus(Base):
     descripcion = Column(String(255), nullable=True)
     id_rol      = Column(Integer, ForeignKey("roles.id"), nullable=False)
 
-    # Relaciones
     role                   = relationship("Role",               back_populates="estados_pedido")
     pedidos_actuales       = relationship("Order",              back_populates="estado_actual",
                                           foreign_keys="Order.id_estado_actual")
@@ -21,7 +19,6 @@ class OrderStatus(Base):
                                           foreign_keys="OrderStatusHistory.id_estado_destino")
     historial_origen       = relationship("OrderStatusHistory", back_populates="estado_origen",
                                           foreign_keys="OrderStatusHistory.id_estado_origen")
-
 
 class Order(Base):
     __tablename__ = "pedidos"
@@ -34,7 +31,6 @@ class Order(Base):
     updated_at       = Column(TIMESTAMP, server_default=func.now(),
                               onupdate=func.now(), nullable=False)
 
-    # Relaciones
     mesa          = relationship("Table",              back_populates="pedidos")
     mesero        = relationship("User",               back_populates="pedidos",
                                  foreign_keys=[id_mesero])
@@ -46,7 +42,6 @@ class Order(Base):
                                  cascade="all, delete-orphan")
     venta         = relationship("Sale",               back_populates="pedido", uselist=False)
 
-
 class OrderDetail(Base):
     __tablename__ = "detalle_pedido"
 
@@ -55,15 +50,12 @@ class OrderDetail(Base):
     id_producto     = Column(Integer, ForeignKey("productos.id"), nullable=False)
     cantidad        = Column(Integer,       nullable=False)
     precio_unitario = Column(Numeric(10,2), nullable=False)
-    # subtotal es columna generada en BD — SQLAlchemy solo la lee
     subtotal        = Column(Numeric(10,2), FetchedValue())
 
-    # Relaciones
     pedido       = relationship("Order",   back_populates="detalles")
     producto     = relationship("Product", back_populates="detalles")
     observaciones = relationship("OrderDetailObservation", back_populates="detalle",
                                  cascade="all, delete-orphan")
-
 
 class OrderDetailObservation(Base):
     __tablename__ = "detalle_observaciones"
@@ -75,7 +67,6 @@ class OrderDetailObservation(Base):
 
     detalle = relationship("OrderDetail", back_populates="observaciones")
 
-
 class OrderStatusHistory(Base):
     __tablename__ = "historial_estados_pedido"
 
@@ -86,7 +77,6 @@ class OrderStatusHistory(Base):
     id_usuario        = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     cambiado_en       = Column(TIMESTAMP, server_default=func.now(), nullable=False)
 
-    # Relaciones
     pedido         = relationship("Order",       back_populates="historial")
     estado_origen  = relationship("OrderStatus", back_populates="historial_origen",
                                   foreign_keys=[id_estado_origen])

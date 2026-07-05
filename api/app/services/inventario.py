@@ -4,28 +4,23 @@ from app.models.order import Order, OrderDetail
 from app.models.product import ProductIngredient
 from app.models.ingredient import Ingredient
 
-
 def descontar_ingredientes(db: Session, pedido_id: int) -> None:
-    """
-    Descuenta los ingredientes del inventario según los productos del pedido.
-    Lanza HTTPException 400 si algún ingrediente no tiene stock suficiente.
-    """
+    pedido = db.query(Order).filter(Order.id == pedido_id).first()
+    if not pedido:
+        raise HTTPException(404, f"Pedido ID {pedido_id} no encontrado")
     detalles = db.query(OrderDetail).filter(OrderDetail.id_pedido == pedido_id).all()
     if not detalles:
-        return
+        raise HTTPException(404, f"Detalles del pedido ID {pedido_id} no encontrados")
 
-    # 1. Recolectar todos los ingredientes necesarios
-    #    { id_ingrediente: cantidad_total_necesaria }
     requerimientos = {}
     for detalle in detalles:
-        # Obtener los ingredientes de este producto
         for pi in detalle.producto.ingredientes:
             ing_id = pi.id_ingrediente
             cantidad_necesaria = float(pi.cantidad) * detalle.cantidad
             requerimientos[ing_id] = requerimientos.get(ing_id, 0) + cantidad_necesaria
 
     if not requerimientos:
-        return
+        raise HTTPException(404, f"Requerimientos para el pedido ID {pedido_id} no encontrados")
 
     actualizaciones = []
     for ing_id, cantidad_requerida in requerimientos.items():
@@ -43,7 +38,6 @@ def descontar_ingredientes(db: Session, pedido_id: int) -> None:
             )
         actualizaciones.append((ingrediente, cantidad_requerida))
 
-    # 3. Ejecutar descuentos
     for ingrediente, cantidad in actualizaciones:
         ingrediente.stock_actual = float(ingrediente.stock_actual) - cantidad
 

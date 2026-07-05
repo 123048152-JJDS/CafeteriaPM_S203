@@ -10,18 +10,10 @@ from app.schemas.sale import SaleCreate, SaleOut, PaymentMethodOut
 
 router = APIRouter()
 
-
-# ══════════════════════════════════════════════════════════════
-#  MÉTODOS DE PAGO
-# ══════════════════════════════════════════════════════════════
 @router.get("/metodos-pago", response_model=List[PaymentMethodOut])
 def get_metodos_pago(db: Session = Depends(get_db), _=Depends(get_current_user)):
     return db.query(PaymentMethod).all()
 
-
-# ══════════════════════════════════════════════════════════════
-#  VENTAS
-# ══════════════════════════════════════════════════════════════
 @router.get("/", response_model=List[SaleOut])
 def get_ventas(
     fecha_inicio: Optional[str] = None,
@@ -29,14 +21,12 @@ def get_ventas(
     db:           Session = Depends(get_db),
     _=Depends(require_roles("admin", "caja"))
 ):
-    """Lista ventas con filtro de fechas (formato YYYY-MM-DD)."""
     q = db.query(Sale)
     if fecha_inicio:
         q = q.filter(Sale.fecha >= fecha_inicio)
     if fecha_fin:
         q = q.filter(Sale.fecha <= fecha_fin)
     return q.order_by(Sale.fecha.desc()).all()
-
 
 @router.get("/{venta_id}", response_model=SaleOut)
 def get_venta(venta_id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
@@ -45,15 +35,13 @@ def get_venta(venta_id: int, db: Session = Depends(get_db), _=Depends(get_curren
         raise HTTPException(404, "Venta no encontrada")
     return venta
 
-
 @router.post("/", response_model=SaleOut, status_code=201)
 def create_venta(
     data: SaleCreate,
     db:   Session = Depends(get_db),
     current_user = Depends(require_roles("admin", "caja"))
 ):
-    """Registra el pago de un pedido. El pedido debe estar en estado 'listo' o 'entregado'."""
-    # 1. Verificar pedido
+
     pedido = db.query(Order).filter(Order.id == data.id_pedido).first()
     if not pedido:
         raise HTTPException(404, "Pedido no encontrado")
@@ -65,19 +53,15 @@ def create_venta(
             "Debe estar 'listo' o 'entregado' para cobrar."
         )
 
-    # 2. Verificar que no tenga venta asociada
     if pedido.venta:
         raise HTTPException(400, "Este pedido ya fue cobrado")
 
-    # 3. Verificar método de pago
     metodo = db.query(PaymentMethod).filter(PaymentMethod.id == data.id_metodo_pago).first()
     if not metodo:
         raise HTTPException(400, "Método de pago no válido")
 
-    # 4. Calcular total del pedido (suma de subtotales de los detalles)
     total = sum(float(d.subtotal or 0) for d in pedido.detalles)
 
-    # 5. Crear venta
     venta = Sale(
         id_pedido=data.id_pedido,
         id_cajero=current_user.id,
@@ -88,20 +72,16 @@ def create_venta(
     db.add(venta)
     db.flush()
 
-    # 6. Cambiar estado del pedido a "pagado"
     estado_pagado = db.query(OrderStatus).filter(OrderStatus.nombre == "pagado").first()
     if estado_pagado:
         pedido.id_estado_actual = estado_pagado.id
-        pedido.updated_at = pedido.updated_at  # trigger update
+        pedido.updated_at = pedido.updated_at
 
-        # Registrar historial
         from app.models.order import OrderStatusHistory
         historial = OrderStatusHistory(
             id_pedido=pedido.id,
-            id_estado_origen=pedido.id_estado_actual,  # Ya se actualizó? Espera, debemos hacerlo en orden.
+            id_estado_origen=pedido.id_estado_actual, 
         )
-        # Re-query para obtener el estado anterior correcto
-        # Simplificado: obtenemos el estado anterior antes de cambiarlo
         estado_anterior_id = pedido.id_estado_actual
         pedido.id_estado_actual = estado_pagado.id
         historial = OrderStatusHistory(

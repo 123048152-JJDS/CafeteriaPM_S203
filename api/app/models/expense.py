@@ -15,7 +15,6 @@ class Expense(Base):
     fecha        = Column(Date,      nullable=False, server_default=func.current_date())
     created_at   = Column(TIMESTAMP, nullable=False, server_default=func.now())
 
-    # Relaciones
     categoria = relationship("Category", back_populates="gastos")
     usuario   = relationship("User",     back_populates="gastos")
 
@@ -31,6 +30,5 @@ class Purchase(Base):
     fecha          = Column(Date,      nullable=False, server_default=func.current_date())
     created_at     = Column(TIMESTAMP, nullable=False, server_default=func.now())
 
-    # Relaciones
     ingrediente = relationship("Ingredient", back_populates="compras")
     usuario     = relationship("User",       back_populates="compras")

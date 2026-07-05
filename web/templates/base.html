@@ -24,7 +24,6 @@
   </head>
   <body>
     <div class="wrapper">
-      <!-- Sidebar -->
       <aside class="sidebar">
         <div class="sidebar-brand">
           <div class="brand-icon"><i class="bi bi-cup-hot"></i></div>
@@ -98,7 +97,6 @@
         </div>
       </aside>
 
-      <!-- Contenido principal -->
       <main class="main-content">
         <div class="topbar">
           <div>
@@ -116,7 +114,6 @@
           </div>
         </div>
 
-        <!-- Mensajes flash -->
         {% with messages = get_flashed_messages(with_categories=true) %} {% if
         messages %} {% for category, message in messages %}
         <div

@@ -18,19 +18,9 @@ from app.schemas.order import (
 
 router = APIRouter()
 
-
-
-# ══════════════════════════════════════════════════════════════
-#  ESTADOS DE PEDIDO (para consulta)
-# ══════════════════════════════════════════════════════════════
 @router.get("/estados", response_model=List[OrderStatusOut])
 def get_estados(db: Session = Depends(get_db), _=Depends(get_current_user)):
     return db.query(OrderStatus).all()
-
-
-# ══════════════════════════════════════════════════════════════
-#  PEDIDOS
-# ══════════════════════════════════════════════════════════════
 
 @router.get("/", response_model=List[OrderOut])
 def get_pedidos(
@@ -44,16 +34,6 @@ def get_pedidos(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """
-    Lista pedidos con filtros avanzados:
-    - estado_id: ID del estado
-    - mesa_id: ID de la mesa
-    - fecha_inicio: YYYY-MM-DD
-    - fecha_fin: YYYY-MM-DD
-    - busqueda: texto para buscar en ID del pedido o número de mesa
-    - limit: número máximo de resultados
-    - offset: número de resultados a saltar (para paginación)
-    """
     q = db.query(Order)
     
     if estado_id:
@@ -78,14 +58,12 @@ def get_pedidos(
         else:
             q = q.join(Order.mesa).filter(cast(Table.numero, String).ilike(f"%{busqueda}%"))
     
-    # Aplicar límite y offset si existen
     if limit is not None:
         q = q.limit(limit)
     if offset is not None:
         q = q.offset(offset)
     
     return q.order_by(Order.created_at.desc()).all()
-
 
 @router.get("/cola-cocina", response_model=List[OrderOut])
 def get_cola_cocina(db: Session = Depends(get_db), _=Depends(get_current_user)):
@@ -97,7 +75,6 @@ def get_cola_cocina(db: Session = Depends(get_db), _=Depends(get_current_user)):
         Order.created_at.asc()
     ).all()
 
-
 @router.get("/{pedido_id}", response_model=OrderOut)
 def get_pedido(pedido_id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
     pedido = db.query(Order).filter(Order.id == pedido_id).first()
@@ -105,27 +82,22 @@ def get_pedido(pedido_id: int, db: Session = Depends(get_db), _=Depends(get_curr
         raise HTTPException(404, "Pedido no encontrado")
     return pedido
 
-
 @router.post("/", response_model=OrderOut, status_code=201)
 def create_pedido(
     data: OrderCreate,
     db:   Session = Depends(get_db),
     current_user = Depends(require_roles("mesero", "admin"))
 ):
-    """Crea un nuevo pedido. Solo mesero o admin."""
-    # Verificar mesa
     mesa = db.query(Table).filter(Table.id == data.id_mesa).first()
     if not mesa:
         raise HTTPException(400, "Mesa no encontrada")
 
-    # Obtener estado inicial "pendiente"
     estado_pendiente = db.query(OrderStatus).filter(
         OrderStatus.nombre == "pendiente"
     ).first()
     if not estado_pendiente:
         raise HTTPException(500, "Estado 'pendiente' no configurado en BD")
 
-    # Crear pedido
     pedido = Order(
         id_mesa=data.id_mesa,
         id_mesero=current_user.id,
@@ -134,7 +106,6 @@ def create_pedido(
     db.add(pedido)
     db.flush()
 
-    # Agregar detalles
     total = 0.0
     for item in data.detalles:
         producto = db.query(Product).filter(Product.id == item.id_producto).first()
@@ -156,7 +127,6 @@ def create_pedido(
         db.add(detalle)
         db.flush()
 
-        # Observaciones del detalle
         if item.observacion:
             obs = OrderDetailObservation(
                 id_detalle=detalle.id,
@@ -164,7 +134,6 @@ def create_pedido(
             )
             db.add(obs)
 
-    # Registrar historial inicial
     historial = OrderStatusHistory(
         id_pedido=pedido.id,
         id_estado_origen=None,
@@ -185,14 +154,6 @@ def cambiar_estado(
     db:   Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """
-    Cambia el estado de un pedido.
-    - pendiente → en_preparacion (cocina)
-    - en_preparacion → listo (cocina) → **DESCUENTA INVENTARIO**
-    - listo → pagado (caja)
-    - listo → entregado (mesero)
-    - cualquier → cancelado (caja/admin)
-    """
     pedido = db.query(Order).filter(Order.id == pedido_id).first()
     if not pedido:
         raise HTTPException(404, "Pedido no encontrado")
@@ -206,19 +167,15 @@ def cambiar_estado(
     estado_actual_nombre = pedido.estado_actual.nombre
     estado_nuevo_nombre = estado_nuevo.nombre
 
-    # ═══ VALIDACIONES DE FLUJO ═══
-    # Regla 1: No se puede regresar a un estado anterior (excepto cancelado)
     if estado_nuevo_nombre == "cancelado":
-        # Se puede cancelar desde cualquier estado
         pass
     else:
-        # Verificar transición válida
         transiciones = {
             "pendiente": ["en_preparacion", "cancelado"],
             "en_preparacion": ["listo", "cancelado"],
             "listo": ["entregado", "pagado", "cancelado"],
-            "entregado": ["pagado"],  # El mesero confirma entrega, luego caja cobra
-            "pagado": [],  # Terminal, no se puede cambiar
+            "entregado": ["pagado"],
+            "pagado": [],
         }
         if estado_nuevo_nombre not in transiciones.get(estado_actual_nombre, []):
             raise HTTPException(
@@ -226,12 +183,9 @@ def cambiar_estado(
                 f"No se puede cambiar de '{estado_actual_nombre}' a '{estado_nuevo_nombre}'"
             )
 
-    # ═══ LÓGICA ESPECIAL: DESCUENTO DE INVENTARIO ═══
     if estado_nuevo_nombre == "listo":
-        # Solo cocina puede marcar como listo (por seguridad, pero el guard de rol lo hará)
         descontar_ingredientes(db, pedido.id)
 
-    # ═══ ACTUALIZAR ESTADO ═══
     pedido.id_estado_actual = estado_nuevo.id
     pedido.updated_at = datetime.now()
 
@@ -246,14 +200,12 @@ def cambiar_estado(
     db.refresh(pedido)
     return pedido
 
-
 @router.delete("/{pedido_id}", status_code=204)
 def delete_pedido(
     pedido_id: int,
     db: Session = Depends(get_db),
     _=Depends(require_roles("admin"))
 ):
-    """Elimina un pedido (solo admin)."""
     pedido = db.query(Order).filter(Order.id == pedido_id).first()
     if not pedido:
         raise HTTPException(404, "Pedido no encontrado")

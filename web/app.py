@@ -7,18 +7,13 @@ from flask import (
 )
 from functools import wraps
 
-# ── Crear aplicación ──────────────────────────────────────────
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # En producción, usa variable de entorno
+app.secret_key = os.urandom(24)
 
-# ── Configuración de la API ──────────────────────────────────
 API_BASE_URL = "http://localhost:8000"
 
-
-# ── Filtro para formatear fechas ─────────────────────────────
 @app.template_filter('format_date')
 def format_date(value, format='%d/%m/%Y'):
-    """Convierte string ISO o datetime a formato legible."""
     if not value:
         return ''
     if isinstance(value, datetime):
@@ -31,25 +26,19 @@ def format_date(value, format='%d/%m/%Y'):
             return value
     return value
 
-
-# ── Decorador para rutas protegidas (SOLO ADMIN) ─────────────
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'access_token' not in session:
             flash("Por favor, inicia sesión primero.", "warning")
             return redirect(url_for('login'))
-        # Verificar que el usuario sea administrador
         if session.get('user_role') != 'admin':
             flash("Acceso denegado. Solo administradores.", "danger")
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
 
-
-# ── Helper para llamar a la API con autenticación ────────────
 def api_request(method, endpoint, data=None, json=None, params=None):
-    """Hace una petición a la API incluyendo el token de sesión."""
     headers = {"Authorization": f"Bearer {session.get('access_token')}"}
     url = f"{API_BASE_URL}{endpoint}"
     try:
@@ -59,7 +48,7 @@ def api_request(method, endpoint, data=None, json=None, params=None):
             response = requests.post(url, headers=headers, json=json or data)
         elif method == "PUT":
             response = requests.put(url, headers=headers, json=json or data)
-        elif method == "PATCH":  # ← NUEVO: soporte para PATCH
+        elif method == "PATCH": 
             response = requests.patch(url, headers=headers, json=json or data)
         elif method == "DELETE":
             response = requests.delete(url, headers=headers)
@@ -70,17 +59,11 @@ def api_request(method, endpoint, data=None, json=None, params=None):
         flash("Error: No se pudo conectar con la API. ¿Está corriendo?", "danger")
         return None
 
-
-# ════════════════════════════════════════════════════════════════
-#  RUTAS DE AUTENTICACIÓN (sin protección)
-# ════════════════════════════════════════════════════════════════
-
 @app.route("/", methods=["GET"])
 def index():
     if 'access_token' in session and session.get('user_role') == 'admin':
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
-
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -104,7 +87,6 @@ def login():
                 session['user_name'] = data['nombre']
                 session['user_role'] = data['rol']
                 
-                # Redirigir al dashboard si es admin, si no, cerrar sesión
                 if data['rol'] != 'admin':
                     flash("Acceso denegado. Solo administradores.", "danger")
                     session.clear()
@@ -126,15 +108,9 @@ def logout():
     flash("Sesión cerrada correctamente", "info")
     return redirect(url_for('login'))
 
-
-# ════════════════════════════════════════════════════════════════
-#  RUTAS PRINCIPALES (protegidas - solo admin)
-# ════════════════════════════════════════════════════════════════
-
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    """Dashboard con estadísticas reales desde la API."""
     res = api_request("GET", "/stats/dashboard")
     stats = {}
     productos = []
@@ -156,11 +132,9 @@ def dashboard():
         user_role=session.get('user_role')
     )
 
-
 @app.route("/usuarios", methods=["GET", "POST"])
 @login_required
 def usuarios():
-    """Gestión de usuarios (solo admin)."""
     res_users = api_request("GET", "/usuarios/")
     res_roles = api_request("GET", "/usuarios/roles")
 
@@ -202,7 +176,6 @@ def usuarios():
         user_role=session.get('user_role')
     )
 
-
 @app.route("/usuarios/eliminar/<int:user_id>", methods=["POST"])
 @login_required
 def eliminar_usuario(user_id):
@@ -212,7 +185,6 @@ def eliminar_usuario(user_id):
     else:
         flash("No se pudo eliminar el usuario", "danger")
     return redirect(url_for('usuarios'))
-
 
 @app.route("/usuarios/editar/<int:user_id>", methods=["POST"])
 @login_required
@@ -241,7 +213,6 @@ def editar_usuario(user_id):
         flash("Error al actualizar usuario", "danger")
     return redirect(url_for('usuarios'))
 
-
 @app.route("/estadisticas")
 @login_required
 def estadisticas():
@@ -249,7 +220,6 @@ def estadisticas():
     fecha_inicio = request.args.get('fecha_inicio')
     fecha_fin = request.args.get('fecha_fin')
 
-    # Datos comunes
     res_resumen = api_request("GET", "/stats/resumen-mes")
     resumen = res_resumen.json() if res_resumen and res_resumen.status_code == 200 else {}
 
@@ -259,7 +229,6 @@ def estadisticas():
     res_gastos_diarios = api_request("GET", "/stats/gastos-diarios?dias=7")
     gastos_diarios = res_gastos_diarios.json() if res_gastos_diarios and res_gastos_diarios.status_code == 200 else []
 
-    # Datos según la pestaña
     datos_tab = {}
     if tab == 'ventas':
         params = []
@@ -308,7 +277,6 @@ def estadisticas():
         user_role=session.get('user_role')
     )
 
-
 @app.route("/proxy/pdf")
 @login_required
 def proxy_pdf():
@@ -321,7 +289,6 @@ def proxy_pdf():
         )
     flash("Error al generar el PDF", "danger")
     return redirect(url_for('estadisticas'))
-
 
 @app.route("/proxy/xlsx")
 @login_required
@@ -336,23 +303,15 @@ def proxy_xlsx():
     flash("Error al generar el Excel", "danger")
     return redirect(url_for('estadisticas'))
 
-
-# ============================================================
-# RUTAS PARA PEDIDOS, MENÚ E INVENTARIO
-# ============================================================
-
 @app.route("/pedidos")
 @login_required
 def pedidos():
-    """Lista de pedidos con filtros."""
-    # Recoger parámetros de la URL
     estado_id = request.args.get('estado_id', type=int)
     mesa_id = request.args.get('mesa_id', type=int)
     fecha_inicio = request.args.get('fecha_inicio')
     fecha_fin = request.args.get('fecha_fin')
     busqueda = request.args.get('busqueda')
 
-    # Construir parámetros para la API
     params = {}
     if estado_id:
         params['estado_id'] = estado_id
@@ -365,18 +324,15 @@ def pedidos():
     if busqueda:
         params['busqueda'] = busqueda
 
-    # ═══ NUEVO: Si no hay filtros, mostrar solo los últimos 10 ═══
     if not any([estado_id, mesa_id, fecha_inicio, fecha_fin, busqueda]):
         params['limit'] = 10
         mostrar_ultimos = True
     else:
         mostrar_ultimos = False
 
-    # Llamar a la API con los parámetros
     res = api_request("GET", "/pedidos/", params=params)
     pedidos = res.json() if res and res.status_code == 200 else []
 
-    # Obtener lista de estados para el filtro
     res_estados = api_request("GET", "/pedidos/estados")
     estados = res_estados.json() if res_estados and res_estados.status_code == 200 else []
 
@@ -416,7 +372,6 @@ def menu():
         user_role=session.get('user_role')
     )
 
-
 @app.route("/inventario")
 @login_required
 def inventario():
@@ -434,11 +389,6 @@ def inventario():
         user_role=session.get('user_role')
     )
 
-
-# ============================================================
-# RUTAS PARA GESTIÓN DE MESAS
-# ============================================================
-
 @app.route("/mesas")
 @login_required
 def mesas():
@@ -450,7 +400,6 @@ def mesas():
         user_name=session.get('user_name'),
         user_role=session.get('user_role')
     )
-
 
 @app.route("/mesas/crear", methods=["POST"])
 @login_required
@@ -476,7 +425,6 @@ def crear_mesa():
         flash(error_msg, "danger")
     return redirect(url_for('mesas'))
 
-
 @app.route("/mesas/eliminar/<int:mesa_id>", methods=["POST"])
 @login_required
 def eliminar_mesa(mesa_id):
@@ -489,11 +437,6 @@ def eliminar_mesa(mesa_id):
             error_msg = res.json().get("detail", error_msg)
         flash(error_msg, "danger")
     return redirect(url_for('mesas'))
-
-
-# ============================================================
-# RUTAS PARA CREAR PRODUCTOS, COMPRAS E INGREDIENTES
-# ============================================================
 
 @app.route("/productos/crear", methods=["POST"])
 @login_required
@@ -527,7 +470,6 @@ def crear_producto():
         flash(error_msg, "danger")
     return redirect(url_for('menu'))
 
-
 @app.route("/compras/registrar", methods=["POST"])
 @login_required
 def registrar_compra():
@@ -555,7 +497,6 @@ def registrar_compra():
             error_msg = res.json().get("detail", error_msg)
         flash(error_msg, "danger")
     return redirect(url_for('inventario'))
-
 
 @app.route("/ingredientes/crear", methods=["POST"])
 @login_required
@@ -587,11 +528,6 @@ def crear_ingrediente():
         flash(error_msg, "danger")
     return redirect(url_for('inventario'))
 
-
-# ============================================================
-# PROXIES PARA REPORTES (PDF / XLSX)
-# ============================================================
-
 @app.route("/proxy/reporte-productos/pdf")
 @login_required
 def proxy_reporte_productos_pdf():
@@ -610,7 +546,6 @@ def proxy_reporte_productos_pdf():
     flash("Error al generar el reporte", "danger")
     return redirect(url_for('estadisticas'))
 
-
 @app.route("/proxy/reporte-productos/xlsx")
 @login_required
 def proxy_reporte_productos_xlsx():
@@ -628,7 +563,6 @@ def proxy_reporte_productos_xlsx():
         })
     flash("Error al generar el reporte", "danger")
     return redirect(url_for('estadisticas'))
-
 
 @app.route("/proxy/reporte-pedidos/pdf")
 @login_required
@@ -651,7 +585,6 @@ def proxy_reporte_pedidos_pdf():
     flash("Error al generar el reporte", "danger")
     return redirect(url_for('estadisticas'))
 
-
 @app.route("/proxy/reporte-pedidos/xlsx")
 @login_required
 def proxy_reporte_pedidos_xlsx():
@@ -673,7 +606,6 @@ def proxy_reporte_pedidos_xlsx():
     flash("Error al generar el reporte", "danger")
     return redirect(url_for('estadisticas'))
 
-
 @app.route("/proxy/reporte-inventario/pdf")
 @login_required
 def proxy_reporte_inventario_pdf():
@@ -684,7 +616,6 @@ def proxy_reporte_inventario_pdf():
         })
     flash("Error al generar el reporte", "danger")
     return redirect(url_for('estadisticas'))
-
 
 @app.route("/proxy/reporte-inventario/xlsx")
 @login_required
@@ -697,7 +628,5 @@ def proxy_reporte_inventario_xlsx():
     flash("Error al generar el reporte", "danger")
     return redirect(url_for('estadisticas'))
 
-
-# ════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
     app.run(debug=True, port=5000, host="0.0.0.0")

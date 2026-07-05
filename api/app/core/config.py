@@ -22,8 +22,6 @@ def get_app_config():
         "debug":                        config("DEBUG",                          default=True, cast=bool),
     }
 
-
-# ── Objeto tipo settings para compatibilidad con main.py ──────
 class _Settings:
     def __init__(self):
         _db  = get_db_config()
@@ -46,8 +44,6 @@ class _Settings:
 
 settings = _Settings()
 
-
-# ── Verificación directa ───────────────────────────────────────
 if __name__ == "__main__":
     try:
         cfg = get_db_config()

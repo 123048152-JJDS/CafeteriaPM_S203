@@ -9,7 +9,6 @@ from app.schemas.compra import CompraCreate, CompraOut
 
 router = APIRouter(prefix="/compras", tags=["Compras"])
 
-
 @router.get("/", response_model=List[CompraOut])
 def get_compras(db: Session = Depends(get_db), _=Depends(require_roles("admin", "cocina"))):
     return db.query(Purchase).order_by(Purchase.fecha.desc()).all()
@@ -35,7 +34,6 @@ def create_compra(
     db.add(compra)
     db.flush()
 
-    # Incrementar stock
     ingrediente.stock_actual = float(ingrediente.stock_actual) + data.cantidad
 
     db.commit()

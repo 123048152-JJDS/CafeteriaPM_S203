@@ -11,12 +11,10 @@ from app.models.role import Role
 from app.models.order import OrderStatus
 from app.models.sale import PaymentMethod
 
-
 def seed_estados(db):
-    # Obtener roles
     roles = {r.nombre: r.id for r in db.query(Role).all()}
     if len(roles) < 4:
-        print("⚠️  Ejecuta primero seed_admin.py para crear los roles")
+        print("Ejecuta primero seed_admin.py para crear los roles")
         return
 
     estados = [
@@ -37,7 +35,7 @@ def seed_estados(db):
             )
             db.add(status)
     db.commit()
-    print("✓ Estados de pedido creados/verificados")
+    print("Estados de pedido creados/verificados")
 
 
 def seed_metodos_pago(db):
@@ -51,14 +49,13 @@ def seed_metodos_pago(db):
         if not db.query(PaymentMethod).filter(PaymentMethod.nombre == nombre).first():
             db.add(PaymentMethod(nombre=nombre, descripcion=desc))
     db.commit()
-    print("✓ Métodos de pago creados/verificados")
-
+    print("Métodos de pago creados/verificados")
 
 if __name__ == "__main__":
     db = SessionLocal()
     try:
         seed_estados(db)
         seed_metodos_pago(db)
-        print("\n✅ Seed de estados y métodos de pago completado.")
+        print("\nSeed de estados y métodos de pago completado.")
     finally:
         db.close()

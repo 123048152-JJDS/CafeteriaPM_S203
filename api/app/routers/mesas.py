@@ -9,7 +9,6 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/mesas", tags=["Mesas"])
 
-# ── Schemas ──────────────────────────────────────────────────
 class MesaCreate(BaseModel):
     numero: int
     capacidad: int
@@ -24,11 +23,7 @@ class MesaOut(BaseModel):
     class Config:
         from_attributes = True
 
-
-# ── Helper para obtener el estado de una mesa ──────────────
 def get_estado_mesa(db: Session, mesa_id: int):
-    """Retorna 'disponible', 'ocupada' o 'reservada' según pedidos activos."""
-    # Estados que indican que la mesa está ocupada
     estados_activos = db.query(OrderStatus).filter(
         OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo", "entregado"])
     ).all()
@@ -43,12 +38,8 @@ def get_estado_mesa(db: Session, mesa_id: int):
         return "ocupada", pedido_activo.id
     return "disponible", None
 
-
-# ── ENDPOINTS ───────────────────────────────────────────────
-
 @router.get("/", response_model=List[MesaOut])
 def get_mesas(db: Session = Depends(get_db), _=Depends(get_current_user)):
-    """Lista todas las mesas con su estado actual."""
     mesas = db.query(Table).all()
     result = []
     for mesa in mesas:
@@ -62,10 +53,8 @@ def get_mesas(db: Session = Depends(get_db), _=Depends(get_current_user)):
         ))
     return result
 
-
 @router.get("/{mesa_id}", response_model=MesaOut)
 def get_mesa(mesa_id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
-    """Obtiene una mesa específica por ID."""
     mesa = db.query(Table).filter(Table.id == mesa_id).first()
     if not mesa:
         raise HTTPException(404, "Mesa no encontrada")
@@ -78,10 +67,8 @@ def get_mesa(mesa_id: int, db: Session = Depends(get_db), _=Depends(get_current_
         pedido_activo_id=pedido_id
     )
 
-
 @router.get("/por-numero/{numero}", response_model=MesaOut)
 def get_mesa_by_numero(numero: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
-    """Obtiene una mesa por su número."""
     mesa = db.query(Table).filter(Table.numero == numero).first()
     if not mesa:
         raise HTTPException(404, f"Mesa número {numero} no encontrada")
@@ -94,15 +81,12 @@ def get_mesa_by_numero(numero: int, db: Session = Depends(get_db), _=Depends(get
         pedido_activo_id=pedido_id
     )
 
-
 @router.post("/", response_model=MesaOut, status_code=201)
 def create_mesa(
     data: MesaCreate,
     db: Session = Depends(get_db),
     _=Depends(require_roles("admin"))
 ):
-    """Crea una nueva mesa. Solo admin."""
-    # Verificar que el número no esté duplicado
     existing = db.query(Table).filter(Table.numero == data.numero).first()
     if existing:
         raise HTTPException(400, f"Ya existe una mesa con el número {data.numero}")
@@ -124,19 +108,16 @@ def create_mesa(
         pedido_activo_id=None
     )
 
-
 @router.delete("/{mesa_id}", status_code=204)
 def delete_mesa(
     mesa_id: int,
     db: Session = Depends(get_db),
     _=Depends(require_roles("admin"))
 ):
-    """Elimina una mesa. Solo admin. No puede tener pedidos activos."""
     mesa = db.query(Table).filter(Table.id == mesa_id).first()
     if not mesa:
         raise HTTPException(404, "Mesa no encontrada")
     
-    # Verificar que no tenga pedidos activos
     estado, pedido_id = get_estado_mesa(db, mesa.id)
     if estado != "disponible":
         raise HTTPException(

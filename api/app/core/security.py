@@ -12,16 +12,12 @@ pwd_context   = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
-# ── Contraseñas ───────────────────────────────────────────────
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
-
 
 def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
-
-# ── JWT ───────────────────────────────────────────────────────
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
     expire = datetime.utcnow() + (
@@ -41,8 +37,6 @@ def decode_token(token: str) -> dict:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-
-# ── Usuario actual ────────────────────────────────────────────
 def get_current_user(
     token: str = Depends(oauth2_scheme),
     db:    Session = Depends(get_db),
@@ -63,11 +57,7 @@ def get_current_user(
     return user
 
 
-# ── Guard por rol ─────────────────────────────────────────────
 def require_roles(*roles: str):
-    """
-    Uso en endpoint: _ = Depends(require_roles("admin", "cocina"))
-    """
     def _guard(current_user=Depends(get_current_user)):
         if current_user.role.nombre not in roles:
             raise HTTPException(

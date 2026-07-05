@@ -13,6 +13,5 @@ class Ingredient(Base):
     stock_minimo   = Column(Numeric(10, 3), nullable=False, default=0)
     costo_unitario = Column(Numeric(10, 2), nullable=False, default=0)
 
-    # Relaciones
     productos = relationship("ProductIngredient", back_populates="ingrediente")
     compras   = relationship("Purchase",          back_populates="ingrediente")
