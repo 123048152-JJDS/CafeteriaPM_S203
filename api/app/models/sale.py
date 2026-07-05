@@ -3,7 +3,6 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
 
-
 class PaymentMethod(Base):
     __tablename__ = "metodos_pago"
 

@@ -7,18 +7,13 @@ from flask import (
 )
 from functools import wraps
 
-# ── Crear aplicación ──────────────────────────────────────────
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # En producción, usa variable de entorno
+app.secret_key = os.urandom(24)
 
-# ── Configuración de la API ──────────────────────────────────
 API_BASE_URL = "http://localhost:8000"
 
-
-# ── Filtro para formatear fechas ─────────────────────────────
 @app.template_filter('format_date')
 def format_date(value, format='%d/%m/%Y'):
-    """Convierte string ISO o datetime a formato legible."""
     if not value:
         return ''
     if isinstance(value, datetime):
@@ -31,25 +26,19 @@ def format_date(value, format='%d/%m/%Y'):
             return value
     return value
 
-
-# ── Decorador para rutas protegidas (SOLO ADMIN) ─────────────
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'access_token' not in session:
             flash("Por favor, inicia sesión primero.", "warning")
             return redirect(url_for('login'))
-        # Verificar que el usuario sea administrador
         if session.get('user_role') != 'admin':
             flash("Acceso denegado. Solo administradores.", "danger")
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
 
-
-# ── Helper para llamar a la API con autenticación ────────────
 def api_request(method, endpoint, data=None, json=None, params=None):
-    """Hace una petición a la API incluyendo el token de sesión."""
     headers = {"Authorization": f"Bearer {session.get('access_token')}"}
     url = f"{API_BASE_URL}{endpoint}"
     try:
@@ -59,7 +48,7 @@ def api_request(method, endpoint, data=None, json=None, params=None):
             response = requests.post(url, headers=headers, json=json or data)
         elif method == "PUT":
             response = requests.put(url, headers=headers, json=json or data)
-        elif method == "PATCH":  # ← NUEVO: soporte para PATCH
+        elif method == "PATCH": 
             response = requests.patch(url, headers=headers, json=json or data)
         elif method == "DELETE":
             response = requests.delete(url, headers=headers)
@@ -70,17 +59,11 @@ def api_request(method, endpoint, data=None, json=None, params=None):
         flash("Error: No se pudo conectar con la API. ¿Está corriendo?", "danger")
         return None
 
-
-# ════════════════════════════════════════════════════════════════
-#  RUTAS DE AUTENTICACIÓN (sin protección)
-# ════════════════════════════════════════════════════════════════
-
 @app.route("/", methods=["GET"])
 def index():
     if 'access_token' in session and session.get('user_role') == 'admin':
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
-
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -104,7 +87,6 @@ def login():
                 session['user_name'] = data['nombre']
                 session['user_role'] = data['rol']
                 
-                # Redirigir al dashboard si es admin, si no, cerrar sesión
                 if data['rol'] != 'admin':
                     flash("Acceso denegado. Solo administradores.", "danger")
                     session.clear()
@@ -119,22 +101,15 @@ def login():
             print(f"[ERROR] {e}")
     return render_template("login.html")
 
-
 @app.route("/logout")
 def logout():
     session.clear()
     flash("Sesión cerrada correctamente", "info")
     return redirect(url_for('login'))
 
-
-# ════════════════════════════════════════════════════════════════
-#  RUTAS PRINCIPALES (protegidas - solo admin)
-# ════════════════════════════════════════════════════════════════
-
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    """Dashboard con estadísticas reales desde la API."""
     res = api_request("GET", "/stats/dashboard")
     stats = {}
     productos = []
@@ -156,15 +131,25 @@ def dashboard():
         user_role=session.get('user_role')
     )
 
-
 @app.route("/usuarios", methods=["GET", "POST"])
 @login_required
 def usuarios():
-    """Gestión de usuarios (solo admin)."""
-    res_users = api_request("GET", "/usuarios/")
-    res_roles = api_request("GET", "/usuarios/roles")
+    busqueda = request.args.get('busqueda')
+    rol_id = request.args.get('rol_id', type=int)
+    activo = request.args.get('activo')
 
+    params = {}
+    if busqueda:
+        params['search'] = busqueda
+    if rol_id:
+        params['rol_id'] = rol_id
+    if activo is not None and activo != '':
+        params['activo'] = activo.lower() == 'true'
+
+    res_users = api_request("GET", "/usuarios/", params=params)
     users = res_users.json() if res_users and res_users.status_code == 200 else []
+
+    res_roles = api_request("GET", "/usuarios/roles")
     roles = res_roles.json() if res_roles and res_roles.status_code == 200 else []
 
     if request.method == "POST":
@@ -198,10 +183,12 @@ def usuarios():
         "usuarios.html",
         users=users,
         roles=roles,
+        busqueda_seleccionada=busqueda,
+        rol_seleccionado=rol_id,
+        estado_seleccionado=activo,
         user_name=session.get('user_name'),
         user_role=session.get('user_role')
     )
-
 
 @app.route("/usuarios/eliminar/<int:user_id>", methods=["POST"])
 @login_required
@@ -212,7 +199,6 @@ def eliminar_usuario(user_id):
     else:
         flash("No se pudo eliminar el usuario", "danger")
     return redirect(url_for('usuarios'))
-
 
 @app.route("/usuarios/editar/<int:user_id>", methods=["POST"])
 @login_required
@@ -241,7 +227,6 @@ def editar_usuario(user_id):
         flash("Error al actualizar usuario", "danger")
     return redirect(url_for('usuarios'))
 
-
 @app.route("/estadisticas")
 @login_required
 def estadisticas():
@@ -249,7 +234,6 @@ def estadisticas():
     fecha_inicio = request.args.get('fecha_inicio')
     fecha_fin = request.args.get('fecha_fin')
 
-    # Datos comunes
     res_resumen = api_request("GET", "/stats/resumen-mes")
     resumen = res_resumen.json() if res_resumen and res_resumen.status_code == 200 else {}
 
@@ -259,7 +243,6 @@ def estadisticas():
     res_gastos_diarios = api_request("GET", "/stats/gastos-diarios?dias=7")
     gastos_diarios = res_gastos_diarios.json() if res_gastos_diarios and res_gastos_diarios.status_code == 200 else []
 
-    # Datos según la pestaña
     datos_tab = {}
     if tab == 'ventas':
         params = []
@@ -308,7 +291,6 @@ def estadisticas():
         user_role=session.get('user_role')
     )
 
-
 @app.route("/proxy/pdf")
 @login_required
 def proxy_pdf():
@@ -321,7 +303,6 @@ def proxy_pdf():
         )
     flash("Error al generar el PDF", "danger")
     return redirect(url_for('estadisticas'))
-
 
 @app.route("/proxy/xlsx")
 @login_required
@@ -336,23 +317,15 @@ def proxy_xlsx():
     flash("Error al generar el Excel", "danger")
     return redirect(url_for('estadisticas'))
 
-
-# ============================================================
-# RUTAS PARA PEDIDOS, MENÚ E INVENTARIO
-# ============================================================
-
 @app.route("/pedidos")
 @login_required
 def pedidos():
-    """Lista de pedidos con filtros."""
-    # Recoger parámetros de la URL
     estado_id = request.args.get('estado_id', type=int)
     mesa_id = request.args.get('mesa_id', type=int)
     fecha_inicio = request.args.get('fecha_inicio')
     fecha_fin = request.args.get('fecha_fin')
     busqueda = request.args.get('busqueda')
 
-    # Construir parámetros para la API
     params = {}
     if estado_id:
         params['estado_id'] = estado_id
@@ -365,18 +338,15 @@ def pedidos():
     if busqueda:
         params['busqueda'] = busqueda
 
-    # ═══ NUEVO: Si no hay filtros, mostrar solo los últimos 10 ═══
     if not any([estado_id, mesa_id, fecha_inicio, fecha_fin, busqueda]):
         params['limit'] = 10
         mostrar_ultimos = True
     else:
         mostrar_ultimos = False
 
-    # Llamar a la API con los parámetros
     res = api_request("GET", "/pedidos/", params=params)
     pedidos = res.json() if res and res.status_code == 200 else []
 
-    # Obtener lista de estados para el filtro
     res_estados = api_request("GET", "/pedidos/estados")
     estados = res_estados.json() if res_estados and res_estados.status_code == 200 else []
 
@@ -394,6 +364,39 @@ def pedidos():
         user_role=session.get('user_role')
     )
 
+
+@app.route("/pedidos/cambiar-estado/<int:pedido_id>", methods=["POST"])
+@login_required
+def cambiar_estado_pedido(pedido_id):
+    id_estado_nuevo = request.form.get("id_estado_nuevo", type=int)
+    if not id_estado_nuevo:
+        flash("Estado no especificado", "warning")
+        return redirect(url_for('pedidos'))
+
+    res = api_request("PATCH", f"/pedidos/{pedido_id}/estado", json={"id_estado_nuevo": id_estado_nuevo})
+    if res and res.status_code == 200:
+        flash("Estado actualizado correctamente", "success")
+    else:
+        error_msg = "Error al actualizar el estado"
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('pedidos'))
+
+
+@app.route("/proxy/ticket/<int:pedido_id>/pdf")
+@login_required
+def proxy_ticket_pdf(pedido_id):
+    res = api_request("GET", f"/pedidos/{pedido_id}/ticket/pdf")
+    if res and res.status_code == 200:
+        return Response(
+            res.content,
+            content_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=ticket_pedido_{pedido_id}.pdf"}
+        )
+    flash("Error al generar el ticket", "danger")
+    return redirect(url_for('pedidos'))
+
 @app.route("/menu")
 @login_required
 def menu():
@@ -408,14 +411,17 @@ def menu():
     res_cat = api_request("GET", "/productos/categorias")
     categorias = res_cat.json() if res_cat and res_cat.status_code == 200 else []
 
+    res_ing = api_request("GET", "/productos/ingredientes")
+    ingredientes = res_ing.json() if res_ing and res_ing.status_code == 200 else []
+
     return render_template(
         "menu.html",
         productos=productos,
         categorias=categorias,
+        ingredientes=ingredientes,
         user_name=session.get('user_name'),
         user_role=session.get('user_role')
     )
-
 
 @app.route("/inventario")
 @login_required
@@ -433,11 +439,79 @@ def inventario():
         user_name=session.get('user_name'),
         user_role=session.get('user_role')
     )
+    
+@app.route("/inventario/editar/<int:ingrediente_id>", methods=["POST"])
+@login_required
+def editar_ingrediente(ingrediente_id):
+    nombre = request.form.get("nombre")
+    unidad = request.form.get("unidad")
+    stock_actual = request.form.get("stock_actual")
+    stock_minimo = request.form.get("stock_minimo")
+    costo_unitario = request.form.get("costo_unitario")
 
+    payload = {}
+    if nombre:
+        payload["nombre"] = nombre
+    if unidad:
+        payload["unidad"] = unidad
+    if stock_actual is not None and stock_actual != '':
+        payload["stock_actual"] = float(stock_actual)
+    if stock_minimo is not None and stock_minimo != '':
+        payload["stock_minimo"] = float(stock_minimo)
+    if costo_unitario is not None and costo_unitario != '':
+        payload["costo_unitario"] = float(costo_unitario)
 
-# ============================================================
-# RUTAS PARA GESTIÓN DE MESAS
-# ============================================================
+    res = api_request("PATCH", f"/productos/ingredientes/{ingrediente_id}", json=payload)
+    if res and res.status_code == 200:
+        flash("Ingrediente actualizado correctamente", "success")
+    else:
+        error_msg = "Error al actualizar el ingrediente."
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('inventario'))
+
+@app.route("/inventario/ajustar-stock/<int:ingrediente_id>", methods=["POST"])
+@login_required
+def ajustar_stock(ingrediente_id):
+    cantidad = request.form.get("cantidad")
+    tipo = request.form.get("tipo", "sumar")
+
+    if not cantidad:
+        flash("Cantidad no especificada", "warning")
+        return redirect(url_for('inventario'))
+
+    try:
+        cantidad = float(cantidad)
+    except ValueError:
+        flash("Cantidad inválida", "danger")
+        return redirect(url_for('inventario'))
+
+    if tipo == "restar":
+        cantidad = -cantidad
+
+    res = api_request("PATCH", f"/productos/ingredientes/{ingrediente_id}/ajustar-stock?cantidad={cantidad}")
+    if res and res.status_code == 200:
+        flash(f"Stock actualizado correctamente. Nuevo stock: {res.json().get('stock_actual')}", "success")
+    else:
+        error_msg = "Error al ajustar el stock."
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('inventario'))
+
+@app.route("/inventario/eliminar/<int:ingrediente_id>", methods=["POST"])
+@login_required
+def eliminar_ingrediente(ingrediente_id):
+    res = api_request("DELETE", f"/productos/ingredientes/{ingrediente_id}")
+    if res and res.status_code == 204:
+        flash("Ingrediente eliminado correctamente", "success")
+    else:
+        error_msg = "No se pudo eliminar el ingrediente. Puede estar siendo usado por un producto."
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('inventario'))
 
 @app.route("/mesas")
 @login_required
@@ -450,7 +524,6 @@ def mesas():
         user_name=session.get('user_name'),
         user_role=session.get('user_role')
     )
-
 
 @app.route("/mesas/crear", methods=["POST"])
 @login_required
@@ -476,7 +549,6 @@ def crear_mesa():
         flash(error_msg, "danger")
     return redirect(url_for('mesas'))
 
-
 @app.route("/mesas/eliminar/<int:mesa_id>", methods=["POST"])
 @login_required
 def eliminar_mesa(mesa_id):
@@ -490,10 +562,62 @@ def eliminar_mesa(mesa_id):
         flash(error_msg, "danger")
     return redirect(url_for('mesas'))
 
+@app.route("/mesas/ocupar/<int:mesa_id>", methods=["POST"])
+@login_required
+def ocupar_mesa(mesa_id):
+    res = api_request("PATCH", f"/mesas/{mesa_id}/ocupar")
+    if res and res.status_code == 200:
+        data = res.json()
+        flash(f"Mesa ocupada correctamente. Pedido #{data.get('pedido_id')}", "success")
+    else:
+        error_msg = "Error al ocupar la mesa."
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('mesas'))
 
-# ============================================================
-# RUTAS PARA CREAR PRODUCTOS, COMPRAS E INGREDIENTES
-# ============================================================
+
+@app.route("/mesas/liberar/<int:mesa_id>", methods=["POST"])
+@login_required
+def liberar_mesa(mesa_id):
+    res = api_request("PATCH", f"/mesas/{mesa_id}/liberar")
+    if res and res.status_code == 200:
+        data = res.json()
+        flash(f"Mesa liberada correctamente. Pedido #{data.get('pedido_id')} cerrado.", "success")
+    else:
+        error_msg = "Error al liberar la mesa."
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('mesas'))
+
+@app.route("/mesas/reservar/<int:mesa_id>", methods=["POST"])
+@login_required
+def reservar_mesa(mesa_id):
+    res = api_request("PATCH", f"/mesas/{mesa_id}/reservar")
+    if res and res.status_code == 200:
+        data = res.json()
+        flash(f"Mesa reservada correctamente. Reserva #{data.get('pedido_id')}", "success")
+    else:
+        error_msg = "Error al reservar la mesa."
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('mesas'))
+
+
+@app.route("/mesas/cancelar-reserva/<int:mesa_id>", methods=["POST"])
+@login_required
+def cancelar_reserva(mesa_id):
+    res = api_request("PATCH", f"/mesas/{mesa_id}/cancelar-reserva")
+    if res and res.status_code == 200:
+        flash("Reserva cancelada correctamente", "success")
+    else:
+        error_msg = "Error al cancelar la reserva."
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('mesas'))
 
 @app.route("/productos/crear", methods=["POST"])
 @login_required
@@ -503,10 +627,18 @@ def crear_producto():
     precio = request.form.get("precio")
     id_categoria = request.form.get("id_categoria")
     disponible = request.form.get("disponible") == "on"
+    ingredientes_ids = request.form.getlist("ingredientes")
 
     if not nombre or not precio:
         flash("Nombre y precio son obligatorios", "warning")
         return redirect(url_for('menu'))
+
+    ingredientes_payload = []
+    for ing_id in ingredientes_ids:
+        ingredientes_payload.append({
+            "id_ingrediente": int(ing_id),
+            "cantidad": 1.0 
+        })
 
     payload = {
         "nombre": nombre,
@@ -515,7 +647,7 @@ def crear_producto():
         "id_categoria": int(id_categoria) if id_categoria else None,
         "disponible": disponible,
         "imagen_url": None,
-        "ingredientes": []
+        "ingredientes": ingredientes_payload
     }
     res = api_request("POST", "/productos/", json=payload)
     if res and res.status_code == 201:
@@ -526,7 +658,6 @@ def crear_producto():
             error_msg = res.json().get("detail", error_msg)
         flash(error_msg, "danger")
     return redirect(url_for('menu'))
-
 
 @app.route("/compras/registrar", methods=["POST"])
 @login_required
@@ -555,7 +686,6 @@ def registrar_compra():
             error_msg = res.json().get("detail", error_msg)
         flash(error_msg, "danger")
     return redirect(url_for('inventario'))
-
 
 @app.route("/ingredientes/crear", methods=["POST"])
 @login_required
@@ -587,10 +717,58 @@ def crear_ingrediente():
         flash(error_msg, "danger")
     return redirect(url_for('inventario'))
 
+@app.route("/productos/editar/<int:producto_id>", methods=["POST"])
+@login_required
+def editar_producto(producto_id):
+    nombre = request.form.get("nombre")
+    descripcion = request.form.get("descripcion")
+    precio = request.form.get("precio")
+    id_categoria = request.form.get("id_categoria")
+    disponible = request.form.get("disponible") == "on"
 
-# ============================================================
-# PROXIES PARA REPORTES (PDF / XLSX)
-# ============================================================
+    if not nombre or not precio:
+        flash("Nombre y precio son obligatorios", "warning")
+        return redirect(url_for('menu'))
+
+    payload = {
+        "nombre": nombre,
+        "descripcion": descripcion or "",
+        "precio": float(precio),
+        "id_categoria": int(id_categoria) if id_categoria else None,
+        "disponible": disponible,
+    }
+    res = api_request("PATCH", f"/productos/{producto_id}", json=payload)
+    if res and res.status_code == 200:
+        flash("Producto actualizado correctamente", "success")
+    else:
+        error_msg = "Error al actualizar el producto."
+        if res and res.status_code == 400:
+            error_msg = res.json().get("detail", error_msg)
+        flash(error_msg, "danger")
+    return redirect(url_for('menu'))
+
+
+@app.route("/productos/eliminar/<int:producto_id>", methods=["POST"])
+@login_required
+def eliminar_producto(producto_id):
+    res = api_request("DELETE", f"/productos/{producto_id}")
+    if res and res.status_code == 204:
+        flash("Producto eliminado correctamente", "success")
+    else:
+        flash("No se pudo eliminar el producto", "danger")
+    return redirect(url_for('menu'))
+
+
+@app.route("/productos/toggle/<int:producto_id>", methods=["POST"])
+@login_required
+def toggle_producto(producto_id):
+    res = api_request("PATCH", f"/productos/{producto_id}/toggle")
+    if res and res.status_code == 200:
+        estado = "activado" if res.json().get("disponible") else "desactivado"
+        flash(f"Producto {estado} correctamente", "success")
+    else:
+        flash("Error al cambiar el estado del producto", "danger")
+    return redirect(url_for('menu'))
 
 @app.route("/proxy/reporte-productos/pdf")
 @login_required
@@ -610,7 +788,6 @@ def proxy_reporte_productos_pdf():
     flash("Error al generar el reporte", "danger")
     return redirect(url_for('estadisticas'))
 
-
 @app.route("/proxy/reporte-productos/xlsx")
 @login_required
 def proxy_reporte_productos_xlsx():
@@ -628,7 +805,6 @@ def proxy_reporte_productos_xlsx():
         })
     flash("Error al generar el reporte", "danger")
     return redirect(url_for('estadisticas'))
-
 
 @app.route("/proxy/reporte-pedidos/pdf")
 @login_required
@@ -651,7 +827,6 @@ def proxy_reporte_pedidos_pdf():
     flash("Error al generar el reporte", "danger")
     return redirect(url_for('estadisticas'))
 
-
 @app.route("/proxy/reporte-pedidos/xlsx")
 @login_required
 def proxy_reporte_pedidos_xlsx():
@@ -673,7 +848,6 @@ def proxy_reporte_pedidos_xlsx():
     flash("Error al generar el reporte", "danger")
     return redirect(url_for('estadisticas'))
 
-
 @app.route("/proxy/reporte-inventario/pdf")
 @login_required
 def proxy_reporte_inventario_pdf():
@@ -684,7 +858,6 @@ def proxy_reporte_inventario_pdf():
         })
     flash("Error al generar el reporte", "danger")
     return redirect(url_for('estadisticas'))
-
 
 @app.route("/proxy/reporte-inventario/xlsx")
 @login_required
@@ -697,7 +870,5 @@ def proxy_reporte_inventario_xlsx():
     flash("Error al generar el reporte", "danger")
     return redirect(url_for('estadisticas'))
 
-
-# ════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
     app.run(debug=True, port=5000, host="0.0.0.0")

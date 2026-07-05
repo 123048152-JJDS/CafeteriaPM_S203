@@ -2,10 +2,8 @@
 {% block title %}Mesas{% endblock %}
 {% block page_title %}Mesas{% endblock %}
 {% block page_subtitle %}Gestión de mesas del local{% endblock %}
-
 {% block content %}
 
-<!-- Resumen rápido -->
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="kpi-card">
@@ -33,7 +31,6 @@
     </div>
 </div>
 
-<!-- Barra de herramientas -->
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div class="d-flex gap-2 flex-wrap">
         <div class="input-group input-group-sm" style="max-width:200px;">
@@ -52,7 +49,6 @@
     </button>
 </div>
 
-<!-- Tabla de mesas -->
 <div class="table-responsive">
     <table class="table-custom" id="tablaMesas">
         <thead>
@@ -72,19 +68,46 @@
                 <td><strong>Mesa {{ mesa.numero }}</strong></td>
                 <td>{{ mesa.capacidad }} personas</td>
                 <td>
-                    {% if mesa.estado == 'disponible' %}
-                        <span class="badge-custom badge-success"><i class="bi bi-check-circle"></i> Disponible</span>
-                    {% elif mesa.estado == 'ocupada' %}
-                        <span class="badge-custom badge-warning"><i class="bi bi-person-fill"></i> Ocupada</span>
-                    {% elif mesa.estado == 'reservada' %}
-                        <span class="badge-custom badge-danger"><i class="bi bi-clock"></i> Reservada</span>
-                    {% else %}
-                        <span class="badge-custom badge-secondary">{{ mesa.estado }}</span>
-                    {% endif %}
+                    <div class="btn-group btn-group-sm" role="group">
+                        {% if mesa.estado == 'disponible' %}
+                            <form method="POST" action="{{ url_for('ocupar_mesa', mesa_id=mesa.id) }}" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-warning" title="Ocupar mesa">
+                                    <i class="bi bi-person-fill"></i> Ocupar
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('reservar_mesa', mesa_id=mesa.id) }}" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-info" title="Reservar mesa">
+                                    <i class="bi bi-clock"></i> Reservar
+                                </button>
+                            </form>
+                        {% elif mesa.estado == 'ocupada' %}
+                            <form method="POST" action="{{ url_for('liberar_mesa', mesa_id=mesa.id) }}" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-success" title="Liberar mesa">
+                                    <i class="bi bi-check-circle"></i> Liberar
+                                </button>
+                            </form>
+                        {% elif mesa.estado == 'reservada' %}
+                            <form method="POST" action="{{ url_for('ocupar_mesa', mesa_id=mesa.id) }}" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-warning" title="Ocupar (cliente llegó)">
+                                    <i class="bi bi-person-fill"></i> Ocupar
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('cancelar_reserva', mesa_id=mesa.id) }}" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Cancelar reserva">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </button>
+                            </form>
+                        {% endif %}
+                        <button class="btn btn-sm btn-outline-danger"
+                                onclick="if(confirm('¿Eliminar esta mesa?')){ document.getElementById('delete-form-{{ mesa.id }}').submit(); }">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                        <form id="delete-form-{{ mesa.id }}" method="POST" action="{{ url_for('eliminar_mesa', mesa_id=mesa.id) }}" style="display:none;"></form>
+                    </div>
                 </td>
                 <td>
                     {% if mesa.pedido_activo_id %}
-                        <a href="{{ url_for('pedidos') }}?mesa_id={{ mesa.id }}" class="text-primary">
+                        <a href="{{ url_for('pedidos') }}?busqueda={{ mesa.pedido_activo_id }}" class="text-primary">
                             Pedido #{{ mesa.pedido_activo_id }}
                         </a>
                     {% else %}
@@ -94,15 +117,19 @@
                 <td>
                     <div class="btn-group btn-group-sm" role="group">
                         {% if mesa.estado == 'disponible' %}
-                            <a href="{{ url_for('pedidos') }}?mesa_id={{ mesa.id }}&accion=ocupar" class="btn btn-sm btn-warning" title="Ocupar mesa">
-                                <i class="bi bi-person-fill"></i> Ocupar
-                            </a>
+                            <form method="POST" action="{{ url_for('ocupar_mesa', mesa_id=mesa.id) }}" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-warning" title="Ocupar mesa">
+                                    <i class="bi bi-person-fill"></i> Ocupar
+                                </button>
+                            </form>
                         {% elif mesa.estado == 'ocupada' %}
-                            <a href="{{ url_for('pedidos') }}?mesa_id={{ mesa.id }}&accion=liberar" class="btn btn-sm btn-success" title="Liberar mesa">
-                                <i class="bi bi-check-circle"></i> Liberar
-                            </a>
+                            <form method="POST" action="{{ url_for('liberar_mesa', mesa_id=mesa.id) }}" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-success" title="Liberar mesa">
+                                    <i class="bi bi-check-circle"></i> Liberar
+                                </button>
+                            </form>
                         {% endif %}
-                        <button class="btn btn-sm btn-outline-danger" 
+                        <button class="btn btn-sm btn-outline-danger"
                                 onclick="if(confirm('¿Eliminar esta mesa?')){ document.getElementById('delete-form-{{ mesa.id }}').submit(); }">
                             <i class="bi bi-trash3"></i>
                         </button>
@@ -119,7 +146,6 @@
     </table>
 </div>
 
-<!-- Modal Nueva Mesa -->
 <div class="modal fade" id="nuevaMesaModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">

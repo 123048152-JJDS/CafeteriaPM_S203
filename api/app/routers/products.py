@@ -14,15 +14,9 @@ from app.schemas.product import (
 
 router = APIRouter()
 
-
-# ══════════════════════════════════════════════════════════════
-#  CATEGORÍAS
-# ══════════════════════════════════════════════════════════════
-
 @router.get("/categorias", response_model=List[CategoryOut])
 def get_categorias(db: Session = Depends(get_db), _=Depends(get_current_user)):
     return db.query(Category).all()
-
 
 @router.post("/categorias", response_model=CategoryOut, status_code=201)
 def create_categoria(
@@ -38,23 +32,15 @@ def create_categoria(
     db.refresh(cat)
     return cat
 
-
-# ══════════════════════════════════════════════════════════════
-#  INGREDIENTES
-# ══════════════════════════════════════════════════════════════
-
 @router.get("/ingredientes", response_model=List[IngredientOut])
 def get_ingredientes(db: Session = Depends(get_db), _=Depends(get_current_user)):
-    return db.query(Ingredient).all()
-
+    return db.query(Ingredient).order_by(Ingredient.id.asc()).all()
 
 @router.get("/ingredientes/stock-bajo", response_model=List[IngredientOut])
 def get_stock_bajo(db: Session = Depends(get_db), _=Depends(get_current_user)):
-    """Ingredientes con stock_actual <= stock_minimo."""
     return db.query(Ingredient).filter(
         Ingredient.stock_actual <= Ingredient.stock_minimo
     ).all()
-
 
 @router.get("/ingredientes/{id}", response_model=IngredientOut)
 def get_ingrediente(id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
@@ -62,7 +48,6 @@ def get_ingrediente(id: int, db: Session = Depends(get_db), _=Depends(get_curren
     if not ing:
         raise HTTPException(404, "Ingrediente no encontrado")
     return ing
-
 
 @router.post("/ingredientes", response_model=IngredientOut, status_code=201)
 def create_ingrediente(
@@ -75,7 +60,6 @@ def create_ingrediente(
     db.commit()
     db.refresh(ing)
     return ing
-
 
 @router.patch("/ingredientes/{id}", response_model=IngredientOut)
 def update_ingrediente(
@@ -93,7 +77,6 @@ def update_ingrediente(
     db.refresh(ing)
     return ing
 
-
 @router.delete("/ingredientes/{id}", status_code=204)
 def delete_ingrediente(
     id: int,
@@ -106,23 +89,16 @@ def delete_ingrediente(
     db.delete(ing)
     db.commit()
 
-
-# ══════════════════════════════════════════════════════════════
-#  PRODUCTOS (MENÚ)
-# ══════════════════════════════════════════════════════════════
-
 @router.get("/", response_model=List[ProductOut])
 def get_productos(
     disponible: bool | None = None,
     db: Session = Depends(get_db),
     _=Depends(get_current_user)
 ):
-    """Lista productos. Filtrar por ?disponible=true para solo los activos."""
     q = db.query(Product)
     if disponible is not None:
         q = q.filter(Product.disponible == disponible)
     return q.all()
-
 
 @router.get("/{id}", response_model=ProductDetailOut)
 def get_producto(id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
@@ -130,7 +106,6 @@ def get_producto(id: int, db: Session = Depends(get_db), _=Depends(get_current_u
     if not prod:
         raise HTTPException(404, "Producto no encontrado")
 
-    # Construir ingredientes con nombre y unidad
     ingredientes = []
     for pi in prod.ingredientes:
         ingredientes.append(ProductIngredientOut(
@@ -144,14 +119,12 @@ def get_producto(id: int, db: Session = Depends(get_db), _=Depends(get_current_u
     result.ingredientes = ingredientes
     return result
 
-
 @router.post("/", response_model=ProductOut, status_code=201)
 def create_producto(
     data: ProductCreate,
     db:   Session = Depends(get_db),
     _=Depends(require_roles("admin", "cocina"))
 ):
-    # Crear producto
     prod = Product(
         nombre=data.nombre,
         descripcion=data.descripcion,
@@ -161,9 +134,8 @@ def create_producto(
         imagen_url=data.imagen_url,
     )
     db.add(prod)
-    db.flush()  # para obtener el id antes del commit
+    db.flush()  
 
-    # Agregar ingredientes
     for ing_data in data.ingredientes:
         ing = db.query(Ingredient).filter(Ingredient.id == ing_data.id_ingrediente).first()
         if not ing:
@@ -178,7 +150,6 @@ def create_producto(
     db.commit()
     db.refresh(prod)
     return prod
-
 
 @router.patch("/{id}", response_model=ProductOut)
 def update_producto(
@@ -209,14 +180,12 @@ def delete_producto(
     db.delete(prod)
     db.commit()
 
-
 @router.patch("/{id}/toggle", response_model=ProductOut)
 def toggle_disponible(
     id: int,
     db: Session = Depends(get_db),
     _=Depends(require_roles("admin", "cocina"))
 ):
-    """Activa o desactiva un producto del menú."""
     prod = db.query(Product).filter(Product.id == id).first()
     if not prod:
         raise HTTPException(404, "Producto no encontrado")
@@ -224,3 +193,23 @@ def toggle_disponible(
     db.commit()
     db.refresh(prod)
     return prod
+
+@router.patch("/ingredientes/{id}/ajustar-stock")
+def ajustar_stock_ingrediente(
+    id: int,
+    cantidad: float,
+    db: Session = Depends(get_db),
+    _=Depends(require_roles("admin", "cocina"))
+):
+    ing = db.query(Ingredient).filter(Ingredient.id == id).first()
+    if not ing:
+        raise HTTPException(404, "Ingrediente no encontrado")
+    
+    nuevo_stock = float(ing.stock_actual) + cantidad
+    if nuevo_stock < 0:
+        raise HTTPException(400, "El stock no puede ser negativo")
+    
+    ing.stock_actual = nuevo_stock
+    db.commit()
+    db.refresh(ing)
+    return {"message": "Stock actualizado", "stock_actual": float(ing.stock_actual)}

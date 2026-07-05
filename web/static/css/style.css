@@ -24,7 +24,6 @@
     --border-radius-sm: 6px;
 }
 
-/* ===== RESET Y GLOBALES ===== */
 * {
     margin: 0;
     padding: 0;
@@ -46,13 +45,11 @@ a:hover {
     color: var(--primary-dark);
 }
 
-/* ===== LAYOUT PRINCIPAL ===== */
 .wrapper {
     display: flex;
     min-height: 100vh;
 }
 
-/* ===== SIDEBAR ===== */
 .sidebar {
     width: var(--sidebar-width);
     background: var(--bg-screen);
@@ -173,7 +170,6 @@ a:hover {
     color: var(--text-muted);
 }
 
-/* ===== MAIN CONTENT ===== */
 .main-content {
     flex: 1;
     padding: 1.2rem 1.8rem;
@@ -200,7 +196,6 @@ a:hover {
     color: var(--text-muted);
 }
 
-/* ===== TARJETAS KPI ===== */
 .kpi-card {
     background: var(--bg-screen);
     border-radius: var(--border-radius);
@@ -229,7 +224,6 @@ a:hover {
 .kpi-delta.up { color: var(--success); }
 .kpi-delta.down { color: var(--danger); }
 
-/* ===== TABLAS ===== */
 .table-custom {
     font-size: 0.8rem;
     background: var(--bg-screen);
@@ -261,7 +255,6 @@ a:hover {
     font-size: 0.7rem;
 }
 
-/* ===== BADGES ===== */
 .badge-custom {
     display: inline-flex;
     align-items: center;
@@ -277,7 +270,6 @@ a:hover {
 .badge-purple { background: #eeedfe; color: #3c3489; }
 .badge-amber { background: #faeeda; color: #854f0b; }
 
-/* ===== BOTONES ===== */
 .btn-primary-custom {
     background: var(--primary);
     color: #fff;
@@ -298,7 +290,6 @@ a:hover {
     color: #1e1508;
 }
 
-/* ===== GRÁFICA DE BARRAS SIMPLE ===== */
 .chart-bars {
     display: flex;
     align-items: flex-end;
@@ -327,7 +318,6 @@ a:hover {
     color: var(--text-muted);
 }
 
-/* ===== RANKING DE PRODUCTOS ===== */
 .rank-item {
     display: flex;
     align-items: center;
@@ -361,7 +351,6 @@ a:hover {
     text-align: right;
 }
 
-/* ===== LOGIN (página sin sidebar) ===== */
 .login-wrapper {
     display: flex;
     align-items: center;
@@ -396,7 +385,6 @@ a:hover {
     color: var(--accent);
 }
 
-/* ===== FILTROS Y HERRAMIENTAS ===== */
 .toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -405,7 +393,6 @@ a:hover {
     margin-bottom: 1rem;
 }
 
-/* ===== TABS ===== */
 .nav-tabs .nav-link {
     color: var(--text-secondary);
     font-size: 0.85rem;
@@ -416,7 +403,6 @@ a:hover {
     border-bottom-color: var(--accent);
 }
 
-/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
     .sidebar {
         width: 60px;
@@ -470,7 +456,6 @@ a:hover {
 }
 
 
-/* Contenedor de gráfica */
 .chart-wrapper {
     position: relative;
     height: 200px;

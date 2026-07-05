@@ -5,7 +5,6 @@
 
 {% block content %}
 
-<!-- Formulario de filtros -->
 <form method="GET" action="{{ url_for('pedidos') }}" class="mb-3">
     <div class="row g-2 align-items-end">
         <div class="col-md-2">
@@ -50,7 +49,6 @@
     </div>
 </form>
 
-<!-- Mensaje de "últimos 10 pedidos" -->
 {% if mostrar_ultimos %}
 <div class="alert alert-info alert-dismissible fade show" role="alert">
     <i class="bi bi-info-circle"></i> Mostrando los últimos <strong>10</strong> pedidos realizados.
@@ -58,7 +56,6 @@
 </div>
 {% endif %}
 
-<!-- Tabla de pedidos -->
 <div class="table-responsive">
     <table class="table-custom">
         <thead>
@@ -84,13 +81,7 @@
                     {% endif %}
                 </td>
                 <td>{{ pedido.mesero.nombre if pedido.mesero else 'N/A' }}</td>
-                <td>
-                    {% set total = 0 %}
-                    {% for detalle in pedido.detalles %}
-                        {% set total = total + (detalle.subtotal or 0) %}
-                    {% endfor %}
-                    ${{ "%.2f"|format(total) }}
-                </td>
+                <td>${{ "%.2f"|format(pedido.total or 0) }}</td>
                 <td>
                     {% set estado = pedido.estado_actual.nombre if pedido.estado_actual else '' %}
                     {% if estado == 'pagado' %}
@@ -111,8 +102,56 @@
                 </td>
                 <td>{{ pedido.created_at|format_date if pedido.created_at else '' }}</td>
                 <td>
-                    <a href="#" class="text-secondary me-2" title="Ver detalle"><i class="bi bi-eye"></i></a>
-                    <a href="#" class="text-secondary" title="Imprimir ticket"><i class="bi bi-printer"></i></a>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-sm btn-outline-primary" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#detallePedidoModal"
+                                data-pedido='{{ pedido|tojson }}'>
+                            <i class="bi bi-eye"></i>
+                        </button>
+
+                        {% if estado == 'pendiente' %}
+                            <form method="POST" action="{{ url_for('cambiar_estado_pedido', pedido_id=pedido.id) }}" style="display:inline;">
+                                <input type="hidden" name="id_estado_nuevo" value="2">
+                                <button type="submit" class="btn btn-sm btn-warning" title="Preparar">
+                                    <i class="bi bi-flame"></i>
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('cambiar_estado_pedido', pedido_id=pedido.id) }}" style="display:inline;">
+                                <input type="hidden" name="id_estado_nuevo" value="6">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Cancelar" onclick="return confirm('¿Cancelar este pedido?')">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </form>
+                        {% elif estado == 'en_preparacion' %}
+                            <form method="POST" action="{{ url_for('cambiar_estado_pedido', pedido_id=pedido.id) }}" style="display:inline;">
+                                <input type="hidden" name="id_estado_nuevo" value="3">
+                                <button type="submit" class="btn btn-sm btn-success" title="Marcar listo">
+                                    <i class="bi bi-check-circle"></i>
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('cambiar_estado_pedido', pedido_id=pedido.id) }}" style="display:inline;">
+                                <input type="hidden" name="id_estado_nuevo" value="6">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Cancelar" onclick="return confirm('¿Cancelar este pedido?')">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </form>
+                        {% elif estado == 'listo' %}
+                            <form method="POST" action="{{ url_for('cambiar_estado_pedido', pedido_id=pedido.id) }}" style="display:inline;">
+                                <input type="hidden" name="id_estado_nuevo" value="4">
+                                <button type="submit" class="btn btn-sm btn-primary" title="Entregar">
+                                    <i class="bi bi-box-seam"></i>
+                                </button>
+                            </form>
+                            <a href="{{ url_for('proxy_ticket_pdf', pedido_id=pedido.id) }}" class="btn btn-sm btn-outline-secondary" title="Ticket">
+                                <i class="bi bi-printer"></i>
+                            </a>
+                        {% elif estado == 'entregado' %}
+                            <a href="{{ url_for('proxy_ticket_pdf', pedido_id=pedido.id) }}" class="btn btn-sm btn-outline-secondary" title="Ticket">
+                                <i class="bi bi-printer"></i>
+                            </a>
+                        {% endif %}
+                    </div>
                 </td>
             </tr>
             {% else %}
@@ -130,12 +169,95 @@
     </table>
 </div>
 
-<!-- Contador de resultados -->
 <div class="mt-2 text-muted small">
     Mostrando {{ pedidos|length }} pedido(s)
     {% if mostrar_ultimos %}
         <span class="text-info">(últimos 10)</span>
     {% endif %}
 </div>
+
+<div class="modal fade" id="detallePedidoModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-receipt"></i> Detalle del pedido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detallePedidoBody">
+                <p class="text-muted">Cargando...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('detallePedidoModal');
+    const body = document.getElementById('detallePedidoBody');
+
+    modal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const pedidoData = button.getAttribute('data-pedido');
+        
+        if (pedidoData) {
+            const pedido = JSON.parse(pedidoData);
+            
+            let html = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>#Pedido:</strong> ${pedido.id}</p>
+                        <p><strong>Mesa:</strong> ${pedido.mesa ? 'Mesa ' + pedido.mesa.numero : 'N/A'}</p>
+                        <p><strong>Mesero:</strong> ${pedido.mesero ? pedido.mesero.nombre : 'N/A'}</p>
+                        <p><strong>Estado:</strong> ${pedido.estado_actual ? pedido.estado_actual.nombre : 'N/A'}</p>
+                        <p><strong>Fecha:</strong> ${pedido.created_at ? new Date(pedido.created_at).toLocaleString() : 'N/A'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Productos</h6>
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr><th>Cant</th><th>Producto</th><th>Precio unit.</th><th>Subtotal</th></tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    if (pedido.detalles && pedido.detalles.length > 0) {
+                        let total = 0;
+                        pedido.detalles.forEach(d => {
+                            const subtotal = d.precio_unitario * d.cantidad;
+                            total += subtotal;
+                            html += `
+                                <tr>
+                                    <td>${d.cantidad}</td>
+                                    <td>${d.producto ? d.producto.nombre : 'Producto ID ' + d.id_producto}</td>
+                                    <td>$${parseFloat(d.precio_unitario).toFixed(2)}</td>
+                                    <td>$${subtotal.toFixed(2)}</td>
+                                </tr>
+                            `;
+                        });
+                        html += `
+                            <tr>
+                                <td colspan="3" class="text-end"><strong>Total</strong></td>
+                                <td><strong>$${total.toFixed(2)}</strong></td>
+                            </tr>
+                        `;
+                    } else {
+                        html += `<tr><td colspan="4" class="text-muted">No hay productos en este pedido.</td></tr>`;
+                    }
+                    
+                    html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            body.innerHTML = html;
+        }
+    });
+});
+</script>
 
 {% endblock %}

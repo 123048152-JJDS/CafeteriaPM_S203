@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+from app.schemas.user import UserOut
 
 class PaymentMethodOut(BaseModel):
     id: int
@@ -17,7 +18,7 @@ class SaleOut(BaseModel):
     id: int
     id_pedido: int
     id_cajero: int
-    cajero: Optional[dict]
+    cajero: Optional[UserOut] = None
     metodo_pago: PaymentMethodOut
     monto_total: float
     monto_recibido: Optional[float]

@@ -8,7 +8,6 @@
 
 {% block content %}
 
-<!-- Filtros de fecha -->
 <div class="row g-2 mb-3 align-items-end">
     <div class="col-auto">
         <label class="form-label small">Desde</label>
@@ -27,7 +26,6 @@
     </div>
 </div>
 
-<!-- Tabs -->
 <ul class="nav nav-tabs mb-3" id="estadisticasTabs" role="tablist">
     <li class="nav-item" role="presentation">
         <a class="nav-link {% if tab_activa == 'ventas' %}active{% endif %}" 
@@ -56,11 +54,7 @@
     </li>
 </ul>
 
-<!-- ========== CONTENIDO DE CADA PESTAÑA ========== -->
-
-<!-- PESTAÑA 1: VENTAS -->
 <div id="tab-ventas" class="tab-pane {% if tab_activa == 'ventas' %}active{% endif %}">
-    <!-- KPIs (mostrados siempre) -->
     <div class="row g-3 mb-4">
         <div class="col-md-3">
             <div class="kpi-card">
@@ -88,7 +82,6 @@
         </div>
     </div>
 
-    <!-- Gráfica de ventas diarias -->
     <div class="row g-3 mb-4">
         <div class="col-md-12">
             <div class="card border-0 shadow-sm">
@@ -105,7 +98,6 @@
         </div>
     </div>
 
-    <!-- Lista de ventas -->
     <div class="card border-0 shadow-sm">
         <div class="card-body">
             <h6 class="card-title">📋 Lista de ventas</h6>
@@ -143,7 +135,6 @@
     </div>
 </div>
 
-<!-- PESTAÑA 2: GASTOS -->
 <div id="tab-gastos" class="tab-pane {% if tab_activa == 'gastos' %}active{% endif %}">
     <div class="row g-3 mb-4">
         <div class="col-md-3">
@@ -226,7 +217,6 @@
     </div>
 </div>
 
-<!-- PESTAÑA 3: PRODUCTOS -->
 <div id="tab-productos" class="tab-pane {% if tab_activa == 'productos' %}active{% endif %}">
     <div class="row g-3">
         <div class="col-md-6">
@@ -301,7 +291,6 @@
     </div>
 </div>
 
-<!-- PESTAÑA 4: INVENTARIO -->
 <div id="tab-inventario" class="tab-pane {% if tab_activa == 'inventario' %}active{% endif %}">
     <div class="row g-3 mb-4">
         <div class="col-md-4">
@@ -386,7 +375,6 @@
     </div>
 </div>
 
-<!-- PESTAÑA 5: HISTORIAL -->
 <div id="tab-historial" class="tab-pane {% if tab_activa == 'historial' %}active{% endif %}">
     <div class="row g-3">
         <div class="col-md-4">
@@ -438,7 +426,6 @@
 </div>
 
 <script>
-// Filtros de fecha
 function aplicarFiltros() {
     const fecha_inicio = document.getElementById('fecha_inicio').value;
     const fecha_fin = document.getElementById('fecha_fin').value;
@@ -449,7 +436,6 @@ function aplicarFiltros() {
     window.location.href = url;
 }
 
-// Gráfica de ventas diarias
 document.addEventListener('DOMContentLoaded', function() {
     const ventasDiarias = {{ ventas_diarias|tojson }};
     const labels = ventasDiarias.map(d => d.fecha);
@@ -482,7 +468,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-    // ... dentro del DOMContentLoaded, después de la gráfica de ventas
     const gastosDiarios = {{ gastos_diarios|tojson }};
     const gastosLabels = gastosDiarios.map(d => d.fecha);
     const gastosData = gastosDiarios.map(d => d.total);

@@ -2,8 +2,6 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
-
-# ── Categoría ─────────────────────────────────────────────────
 class CategoryOut(BaseModel):
     id:     int
     nombre: str
@@ -13,19 +11,16 @@ class CategoryOut(BaseModel):
 
 class CategoryCreate(BaseModel):
     nombre: str
-    tipo:   str  # producto | gasto | ambos
+    tipo:   str
 
-
-# ── Ingrediente ───────────────────────────────────────────────
 class IngredientOut(BaseModel):
-    id:             int
-    nombre:         str
-    unidad:         str
-    stock_actual:   float
-    stock_minimo:   float
+    id: int
+    nombre: str
+    unidad: str
+    stock_actual: float
+    stock_minimo: float
     costo_unitario: float
     model_config = {"from_attributes": True}
-
 
 class IngredientCreate(BaseModel):
     nombre:         str
@@ -34,7 +29,6 @@ class IngredientCreate(BaseModel):
     stock_minimo:   float = 0
     costo_unitario: float = 0
 
-
 class IngredientUpdate(BaseModel):
     nombre:         Optional[str]   = None
     unidad:         Optional[str]   = None
@@ -42,8 +36,6 @@ class IngredientUpdate(BaseModel):
     stock_minimo:   Optional[float] = None
     costo_unitario: Optional[float] = None
 
-
-# ── Producto ──────────────────────────────────────────────────
 class ProductIngredientOut(BaseModel):
     id_ingrediente: int
     nombre:         str
@@ -51,11 +43,9 @@ class ProductIngredientOut(BaseModel):
     cantidad:       float
     model_config = {"from_attributes": True}
 
-
 class ProductIngredientCreate(BaseModel):
     id_ingrediente: int
     cantidad:       float
-
 
 class ProductCreate(BaseModel):
     nombre:        str
@@ -66,7 +56,6 @@ class ProductCreate(BaseModel):
     imagen_url:    Optional[str]   = None
     ingredientes:  list[ProductIngredientCreate] = []
 
-
 class ProductUpdate(BaseModel):
     nombre:       Optional[str]   = None
     descripcion:  Optional[str]   = None
@@ -74,7 +63,6 @@ class ProductUpdate(BaseModel):
     id_categoria: Optional[int]   = None
     disponible:   Optional[bool]  = None
     imagen_url:   Optional[str]   = None
-
 
 class ProductOut(BaseModel):
     id:          int
@@ -85,7 +73,6 @@ class ProductOut(BaseModel):
     categoria:   Optional[CategoryOut]
     created_at:  datetime
     model_config = {"from_attributes": True}
-
 
 class ProductDetailOut(ProductOut):
     ingredientes: list[ProductIngredientOut] = []

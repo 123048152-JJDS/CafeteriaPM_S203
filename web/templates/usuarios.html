@@ -5,20 +5,44 @@
 
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div class="d-flex gap-2 flex-wrap">
-        <div class="input-group input-group-sm" style="max-width:200px;">
-            <span class="input-group-text"><i class="bi bi-search"></i></span>
-            <input type="text" class="form-control" placeholder="Buscar...">
+<form method="GET" action="{{ url_for('usuarios') }}" class="mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small">Buscar</label>
+            <input type="text" class="form-control form-control-sm" name="busqueda" 
+                   placeholder="Nombre o email..." value="{{ busqueda_seleccionada or '' }}">
         </div>
-        <select class="form-select form-select-sm" style="width:auto;">
-            <option value="">Rol</option>
-            {% for r in roles %}
-                <option value="{{ r.id }}">{{ r.nombre|capitalize }}</option>
-            {% endfor %}
-        </select>
-        <button class="btn btn-sm btn-primary-custom">Filtrar</button>
+        <div class="col-md-3">
+            <label class="form-label small">Rol</label>
+            <select class="form-select form-select-sm" name="rol_id">
+                <option value="">Todos</option>
+                {% for r in roles %}
+                <option value="{{ r.id }}" {% if rol_seleccionado == r.id %}selected{% endif %}>
+                    {{ r.nombre|capitalize }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">Estado</label>
+            <select class="form-select form-select-sm" name="activo">
+                <option value="">Todos</option>
+                <option value="true" {% if estado_seleccionado == 'true' %}selected{% endif %}>Activos</option>
+                <option value="false" {% if estado_seleccionado == 'false' %}selected{% endif %}>Inactivos</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-1">
+            <button type="submit" class="btn btn-sm btn-primary-custom w-100">
+                <i class="bi bi-funnel"></i> Filtrar
+            </button>
+            <a href="{{ url_for('usuarios') }}" class="btn btn-sm btn-outline-secondary w-100">
+                <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+            </a>
+        </div>
     </div>
+</form>
+
+<div class="d-flex justify-content-end mb-3">
     <button class="btn btn-sm btn-accent" data-bs-toggle="modal" data-bs-target="#nuevoUsuarioModal">
         <i class="bi bi-plus-circle"></i> Nuevo usuario
     </button>
@@ -67,7 +91,6 @@
                 </td>
                 <td>{{ u.created_at|format_date if u.created_at else '' }}</td>
                 <td>
-                    <!-- Botón Editar (dentro del bucle) -->
                     <button class="btn btn-sm btn-outline-primary" 
                             data-bs-toggle="modal" 
                             data-bs-target="#editarUsuarioModal"
@@ -78,7 +101,6 @@
                             data-activo="{{ u.activo|lower }}">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <!-- Botón Eliminar -->
                     <form action="{{ url_for('eliminar_usuario', user_id=u.id) }}" method="POST" style="display:inline;">
                         <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar este usuario?')">
                             <i class="bi bi-trash3"></i>
@@ -88,14 +110,23 @@
             </tr>
             {% else %}
             <tr>
-                <td colspan="6" class="text-center text-muted py-3">No hay usuarios registrados.</td>
+                <td colspan="6" class="text-center text-muted py-3">
+                    {% if busqueda_seleccionada or rol_seleccionado or estado_seleccionado %}
+                        No hay usuarios que coincidan con los filtros aplicados.
+                    {% else %}
+                        No hay usuarios registrados.
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
 
-<!-- ======= MODAL NUEVO USUARIO ======= -->
+<div class="mt-2 text-muted small">
+    Mostrando {{ users|length }} usuario(s)
+</div>
+
 <div class="modal fade" id="nuevoUsuarioModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -139,7 +170,6 @@
     </div>
 </div>
 
-<!-- ======= MODAL EDITAR USUARIO ======= -->
 <div class="modal fade" id="editarUsuarioModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -185,20 +215,17 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Modal de edición: llenar campos con los datos del botón
     const editModal = document.getElementById('editarUsuarioModal');
     const editForm = document.getElementById('editarUsuarioForm');
 
     editModal.addEventListener('show.bs.modal', function(event) {
         const button = event.relatedTarget;
-        // Obtener datos de los atributos data-*
         const id = button.getAttribute('data-id');
         const nombre = button.getAttribute('data-nombre');
         const email = button.getAttribute('data-email');
         const rol = button.getAttribute('data-rol');
         const activo = button.getAttribute('data-activo') === 'true';
 
-        // Llenar campos del formulario
         document.getElementById('edit_nombre').value = nombre || '';
         document.getElementById('edit_email').value = email || '';
         document.getElementById('edit_rol').value = rol || '';

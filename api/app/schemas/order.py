@@ -4,6 +4,12 @@ from datetime import datetime
 from app.schemas.product import ProductOut
 from app.schemas.user import UserOut
 
+class MesaOut(BaseModel):
+    id: int
+    numero: int
+    capacidad: int
+    model_config = {"from_attributes": True}
+
 class OrderStatusOut(BaseModel):
     id: int
     nombre: str
@@ -28,18 +34,19 @@ class OrderDetailOut(BaseModel):
     producto: Optional[ProductOut]
     cantidad: int
     precio_unitario: float
-    subtotal: float
+    subtotal: Optional[float] = None
     observaciones: List[str] = []
     model_config = {"from_attributes": True}
 
 class OrderOut(BaseModel):
     id: int
     id_mesa: int
-    mesa: Optional[dict]
+    mesa: Optional[MesaOut]
     id_mesero: int
     mesero: Optional[UserOut]
     estado_actual: OrderStatusOut
     detalles: List[OrderDetailOut]
+    total: Optional[float] = 0.0
     created_at: datetime
     updated_at: datetime
     model_config = {"from_attributes": True}

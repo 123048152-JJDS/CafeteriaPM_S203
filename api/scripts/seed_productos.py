@@ -9,9 +9,7 @@ from app.core.database import SessionLocal
 from app.models.product import Category, Product, ProductIngredient
 from app.models.ingredient import Ingredient
 
-
 def seed(db):
-    # ── Categorías ────────────────────────────────────────────
     cats = [
         ("Bebidas",       "producto"),
         ("Comida",        "producto"),
@@ -28,9 +26,8 @@ def seed(db):
             db.flush()
         cat_map[nombre] = c
     db.commit()
-    print(f"✓ {len(cats)} categorías")
+    print(f"{len(cats)} categorías")
 
-    # ── Ingredientes ──────────────────────────────────────────
     ings_data = [
         ("Café molido",    "kg",    2.4,  0.5,  180.0),
         ("Leche entera",   "L",     0.8,  2.0,   22.0),
@@ -55,9 +52,8 @@ def seed(db):
             db.flush()
         ing_map[nombre] = i
     db.commit()
-    print(f"✓ {len(ings_data)} ingredientes")
+    print(f"{len(ings_data)} ingredientes")
 
-    # ── Productos con ingredientes ─────────────────────────────
     productos = [
         {
             "nombre": "Café Americano", "precio": 35.0,
@@ -114,9 +110,8 @@ def seed(db):
                 cantidad=cantidad,
             ))
     db.commit()
-    print(f"✓ {len(productos)} productos con ingredientes")
-    print("\n✅ Seed de productos completado.")
-
+    print(f"{len(productos)} productos con ingredientes")
+    print("\nSeed de productos completado.")
 
 if __name__ == "__main__":
     db = SessionLocal()

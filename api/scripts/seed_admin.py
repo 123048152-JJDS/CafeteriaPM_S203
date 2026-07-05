@@ -22,13 +22,13 @@ def seed_roles(db):
         if not db.query(Role).filter(Role.nombre == nombre).first():
             db.add(Role(nombre=nombre, descripcion=desc))
     db.commit()
-    print("✓ Roles creados/verificados")
+    print("Roles creados/verificados")
 
 
 def seed_admin(db):
     email = "admin@cafe.com"
     if db.query(User).filter(User.email == email).first():
-        print(f"✓ El usuario {email} ya existe")
+        print(f"El usuario {email} ya existe")
         return
 
     admin_role = db.query(Role).filter(Role.nombre == "admin").first()
@@ -41,7 +41,7 @@ def seed_admin(db):
     )
     db.add(user)
     db.commit()
-    print(f"✓ Usuario admin creado: {email} / Admin123!")
+    print(f"Usuario admin creado: {email} / Admin123!")
 
 
 if __name__ == "__main__":
@@ -49,6 +49,6 @@ if __name__ == "__main__":
     try:
         seed_roles(db)
         seed_admin(db)
-        print("\n✅ Seed completado. Ya puedes hacer login.")
+        print("\nSeed completado. Ya puedes hacer login.")
     finally:
         db.close()

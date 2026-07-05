@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import date, datetime
+from app.schemas.product import IngredientOut  
+from app.schemas.user import UserOut
 
 class CompraCreate(BaseModel):
     id_ingrediente: int
@@ -11,8 +13,8 @@ class CompraCreate(BaseModel):
 class CompraOut(BaseModel):
     id: int
     id_ingrediente: int
-    ingrediente: Optional[dict]
-    usuario: Optional[dict]
+    ingrediente: Optional[IngredientOut] = None
+    usuario: Optional[UserOut] = None
     cantidad: float
     costo_total: float
     fecha: date

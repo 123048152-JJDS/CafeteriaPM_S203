@@ -3,7 +3,6 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
 
-
 class User(Base):
     __tablename__ = "usuarios"
 
@@ -15,7 +14,6 @@ class User(Base):
     activo        = Column(Boolean, nullable=False, default=True)
     created_at    = Column(TIMESTAMP, server_default=func.now(), nullable=False)
 
-    # Relaciones
     role                  = relationship("Role",     back_populates="usuarios")
     pedidos               = relationship("Order",    back_populates="mesero",
                                          foreign_keys="Order.id_mesero")

@@ -25,10 +25,6 @@ from app.schemas.stats import DashboardStats, ProductoVendido, VentaPorPeriodo
 
 router = APIRouter()
 
-
-# ============================================================
-# DASHBOARD (EXISTENTE)
-# ============================================================
 @router.get("/dashboard", response_model=DashboardStats)
 def get_dashboard(
     db: Session = Depends(get_db),
@@ -80,10 +76,6 @@ def get_dashboard(
         productos_mas_vendidos=top_productos
     )
 
-
-# ============================================================
-# RESUMEN DEL MES
-# ============================================================
 @router.get("/resumen-mes")
 def get_resumen_mes(
     db: Session = Depends(get_db),
@@ -131,10 +123,6 @@ def get_resumen_mes(
         "fecha_fin": hoy.strftime("%Y-%m-%d")
     }
 
-
-# ============================================================
-# VENTAS DIARIAS (GRÁFICA)
-# ============================================================
 @router.get("/ventas-diarias")
 def get_ventas_diarias(
     dias: int = 7,
@@ -165,10 +153,6 @@ def get_ventas_diarias(
 
     return resultado
 
-
-# ============================================================
-# PRODUCTOS MÁS VENDIDOS (EXISTENTE)
-# ============================================================
 @router.get("/productos-mas-vendidos", response_model=List[ProductoVendido])
 def get_productos_mas_vendidos(
     limit: int = 10,
@@ -196,11 +180,6 @@ def get_productos_mas_vendidos(
         )
         for p in results
     ]
-
-
-# ============================================================
-# NUEVOS ENDPOINTS PARA PESTAÑAS
-# ============================================================
 
 @router.get("/ventas-lista")
 def get_ventas_lista(
@@ -252,7 +231,6 @@ def get_gastos_lista(
         }
         for g in gastos
     ]
-
 
 @router.get("/productos-estadisticas")
 def get_productos_estadisticas(
@@ -401,9 +379,6 @@ def get_historial_actividad(
         ]
     }
 
-# ============================================================
-# REPORTES PDF Y XLSX (EXISTENTES)
-# ============================================================
 @router.get("/reporte-ventas/pdf")
 def reporte_ventas_pdf(
     db: Session = Depends(get_db),
@@ -542,7 +517,6 @@ def get_gastos_diarios(
 
     return resultado
 
-# ── Reporte de productos ──────────────────────────────────────
 @router.get("/reporte-productos/pdf")
 def reporte_productos_pdf(
     categoria_id: Optional[int] = None,
@@ -649,7 +623,6 @@ def reporte_productos_xlsx(
         "Content-Disposition": "attachment; filename=reporte_productos.xlsx"
     })
 
-# ── Reporte de pedidos ──────────────────────────────────────
 @router.get("/reporte-pedidos/pdf")
 def reporte_pedidos_pdf(
     estado_id: Optional[int] = None,
@@ -765,7 +738,6 @@ def reporte_pedidos_xlsx(
         "Content-Disposition": "attachment; filename=reporte_pedidos.xlsx"
     })
 
-# ── Reporte de inventario ──────────────────────────────────
 @router.get("/reporte-inventario/pdf")
 def reporte_inventario_pdf(
     db: Session = Depends(get_db),

@@ -3,7 +3,6 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
 
-
 class Category(Base):
     __tablename__ = "categorias"
 
@@ -27,7 +26,6 @@ class Product(Base):
     imagen_url   = Column(String(255), nullable=True)
     created_at   = Column(TIMESTAMP, server_default=func.now(), nullable=False)
 
-    # Relaciones
     categoria    = relationship("Category",          back_populates="productos")
     ingredientes = relationship("ProductIngredient", back_populates="producto")
     detalles     = relationship("OrderDetail",       back_populates="producto")
@@ -40,6 +38,5 @@ class ProductIngredient(Base):
     id_ingrediente = Column(Integer, ForeignKey("ingredientes.id", ondelete="CASCADE"), primary_key=True)
     cantidad       = Column(Numeric(10, 3), nullable=False)
 
-    # Relaciones
     producto    = relationship("Product",    back_populates="ingredientes")
     ingrediente = relationship("Ingredient", back_populates="productos")
