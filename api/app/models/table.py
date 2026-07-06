@@ -2,7 +2,6 @@ from sqlalchemy import Column, Integer
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
-
 class Table(Base):
     __tablename__ = "mesas"
 
@@ -10,5 +9,4 @@ class Table(Base):
     numero    = Column(Integer, nullable=False, unique=True)
     capacidad = Column(Integer, nullable=False)
 
-    # Relaciones
     pedidos = relationship("Order", back_populates="mesa")

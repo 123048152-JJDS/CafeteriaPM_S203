@@ -1,78 +1,505 @@
 {% extends "base.html" %}
 {% block title %}Estadísticas{% endblock %}
+{% block page_title %}Estadísticas{% endblock %}
+{% block page_subtitle %}Análisis y reportes del negocio{% endblock %}
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h2>Reportes y Estadísticas</h2>
-        <hr>
+
+<!-- Filtros de fecha y botones de descarga dinámicos -->
+<div class="row g-2 mb-3 align-items-end">
+    <div class="col-auto">
+        <label class="form-label small">Desde</label>
+        <input type="date" class="form-control form-control-sm" id="fecha_inicio" value="{{ fecha_inicio or resumen.fecha_inicio or '' }}">
+    </div>
+    <div class="col-auto">
+        <label class="form-label small">Hasta</label>
+        <input type="date" class="form-control form-control-sm" id="fecha_fin" value="{{ fecha_fin or resumen.fecha_fin or '' }}">
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-sm btn-primary-custom" onclick="aplicarFiltros()">Aplicar</button>
+    </div>
+    <div class="col text-end">
+        <a href="{{ descargas.pdf }}" class="btn btn-sm btn-outline-danger"><i class="bi bi-file-pdf"></i> PDF</a>
+        <a href="{{ descargas.xlsx }}" class="btn btn-sm btn-success"><i class="bi bi-file-excel"></i> XLSX</a>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <h5>📦 Productos Más Vendidos</h5>
+<!-- Pestañas (mantienen filtros) -->
+<ul class="nav nav-tabs mb-3" id="estadisticasTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <a class="nav-link {% if tab_activa == 'ventas' %}active{% endif %}" 
+           href="{{ url_for('estadisticas', tab='ventas', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin) }}" 
+           role="tab">Ventas</a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link {% if tab_activa == 'gastos' %}active{% endif %}" 
+           href="{{ url_for('estadisticas', tab='gastos', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin) }}" 
+           role="tab">Gastos</a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link {% if tab_activa == 'productos' %}active{% endif %}" 
+           href="{{ url_for('estadisticas', tab='productos', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin) }}" 
+           role="tab">Productos</a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link {% if tab_activa == 'inventario' %}active{% endif %}" 
+           href="{{ url_for('estadisticas', tab='inventario', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin) }}" 
+           role="tab">Inventario</a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link {% if tab_activa == 'historial' %}active{% endif %}" 
+           href="{{ url_for('estadisticas', tab='historial', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin) }}" 
+           role="tab">Historial</a>
+    </li>
+</ul>
+
+<!-- ========================== PESTAÑA VENTAS ========================== -->
+<div id="tab-ventas" class="tab-pane {% if tab_activa == 'ventas' %}active{% endif %}">
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="kpi-card">
+                <div class="kpi-label"><i class="bi bi-currency-dollar"></i> Ventas del mes</div>
+                <div class="kpi-value">${{ "%.2f"|format(resumen.get('total_ventas', 0)) }}</div>
             </div>
-            <div class="card-body">
-                <table class="table table-sm">
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card">
+                <div class="kpi-label"><i class="bi bi-receipt"></i> Pedidos del mes</div>
+                <div class="kpi-value">{{ resumen.get('total_pedidos', 0) }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card">
+                <div class="kpi-label"><i class="bi bi-ticket-perforated"></i> Ticket promedio</div>
+                <div class="kpi-value">${{ "%.2f"|format(resumen.get('ticket_promedio', 0)) }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card">
+                <div class="kpi-label"><i class="bi bi-graph-up"></i> Ganancia neta</div>
+                <div class="kpi-value">${{ "%.2f"|format(resumen.get('ganancia_neta', 0)) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title d-flex justify-content-between align-items-center">
+                        Ventas diarias (últimos 7 días)
+                        <span class="badge bg-light text-muted fw-normal">{{ resumen.fecha_inicio|default('') }} – {{ resumen.fecha_fin|default('') }}</span>
+                    </h6>
+                    <div style="position: relative; height: 200px; width: 100%;">
+                        <canvas id="ventasChart" style="display: block; width: 100%; height: 100%;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <h6 class="card-title">📋 Lista de ventas</h6>
+            <div class="table-responsive">
+                <table class="table-custom">
                     <thead>
-                        <tr><th>Producto</th><th>Total Vendido</th></tr>
+                        <tr>
+                            <th>ID Venta</th>
+                            <th>Pedido</th>
+                            <th>Cajero</th>
+                            <th>Método</th>
+                            <th>Monto</th>
+                            <th>Fecha</th>
+                        </tr>
                     </thead>
                     <tbody>
-                        {% for p in top_productos %}
+                        {% for v in datos_tab.get('ventas', []) %}
                         <tr>
-                            <td>{{ p.nombre }}</td>
-                            <td><span class="badge bg-primary">{{ p.total_vendido }}</span></td>
+                            <td>#{{ v.id }}</td>
+                            <td>#{{ v.pedido_id }}</td>
+                            <td>{{ v.cajero }}</td>
+                            <td>{{ v.metodo_pago }}</td>
+                            <td>${{ "%.2f"|format(v.monto_total) }}</td>
+                            <td>{{ v.fecha|format_date }}</td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="2" class="text-muted">No hay datos.</td></tr>
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">No hay ventas registradas.</td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-warning text-dark">
-                <h5>⚠️ Ingredientes con Stock Bajo</h5>
+<!-- ========================== PESTAÑA GASTOS ========================== -->
+<div id="tab-gastos" class="tab-pane {% if tab_activa == 'gastos' %}active{% endif %}">
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="kpi-card">
+                <div class="kpi-label"><i class="bi bi-cash"></i> Gastos del mes</div>
+                <div class="kpi-value">${{ "%.2f"|format(resumen.get('gastos_totales', 0)) }}</div>
             </div>
-            <div class="card-body">
-                <ul class="list-group">
-                    {% for ing in stock_bajo %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ ing.nombre }}
-                        <span class="badge bg-danger rounded-pill">{{ ing.stock_actual }} / {{ ing.stock_minimo }} {{ ing.unidad }}</span>
-                    </li>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card">
+                <div class="kpi-label"><i class="bi bi-percent"></i> % sobre ventas</div>
+                <div class="kpi-value">
+                    {% if resumen.get('total_ventas', 0) > 0 %}
+                        {{ "%.1f"|format(resumen.get('gastos_totales', 0) / resumen.get('total_ventas', 1) * 100) }}%
                     {% else %}
-                    <li class="list-group-item text-muted">Todos los ingredientes tienen stock suficiente.</li>
-                    {% endfor %}
-                </ul>
+                        0%
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="kpi-card">
+                <div class="kpi-label"><i class="bi bi-info-circle"></i> Resumen</div>
+                <div class="small">
+                    <span class="text-success">Ventas: ${{ "%.2f"|format(resumen.get('total_ventas', 0)) }}</span>
+                    <span class="text-danger ms-3">Gastos: ${{ "%.2f"|format(resumen.get('gastos_totales', 0)) }}</span>
+                    <span class="text-primary ms-3">Balance: ${{ "%.2f"|format(resumen.get('total_ventas', 0) - resumen.get('gastos_totales', 0)) }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">Gastos diarios (últimos 7 días)</h6>
+                    <div style="position: relative; height: 200px; width: 100%;">
+                        <canvas id="gastosChart" style="display: block; width: 100%; height: 100%;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <h6 class="card-title">📋 Lista de gastos</h6>
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Descripción</th>
+                            <th>Categoría</th>
+                            <th>Usuario</th>
+                            <th>Monto</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for g in datos_tab.get('gastos', []) %}
+                        <tr>
+                            <td>#{{ g.id }}</td>
+                            <td>{{ g.descripcion }}</td>
+                            <td>{{ g.categoria }}</td>
+                            <td>{{ g.usuario }}</td>
+                            <td class="text-danger">-${{ "%.2f"|format(g.monto) }}</td>
+                            <td>{{ g.fecha|format_date }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">No hay gastos registrados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5>📄 Exportar Reporte de Ventas</h5>
+<!-- ========================== PESTAÑA PRODUCTOS ========================== -->
+<div id="tab-productos" class="tab-pane {% if tab_activa == 'productos' %}active{% endif %}">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">🔥 Más vendidos</h6>
+                    {% for p in datos_tab.get('mas_vendidos', []) %}
+                    <div class="rank-item d-flex align-items-center gap-2 small py-1 {% if not loop.last %}border-bottom{% endif %}">
+                        <span class="text-muted" style="min-width:18px;">{{ loop.index }}</span>
+                        <span class="flex-grow-1">{{ p.nombre }}</span>
+                        <span class="fw-bold">{{ p.total_vendido }}</span>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small">No hay datos.</p>
+                    {% endfor %}
+                </div>
             </div>
-            <div class="card-body">
-                <p>Descarga el reporte completo del último mes.</p>
-                <div class="d-flex gap-2">
-                    <a href="{{ url_for('proxy_pdf') }}" class="btn btn-danger">
-                        <i class="bi bi-file-pdf"></i> Descargar PDF
-                    </a>
-                    <a href="{{ url_for('proxy_xlsx') }}" class="btn btn-success">
-                        <i class="bi bi-file-excel"></i> Descargar Excel (XLSX)
-                    </a>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">📉 Menos vendidos</h6>
+                    {% for p in datos_tab.get('menos_vendidos', []) %}
+                    <div class="rank-item d-flex align-items-center gap-2 small py-1 {% if not loop.last %}border-bottom{% endif %}">
+                        <span class="text-muted" style="min-width:18px;">{{ loop.index }}</span>
+                        <span class="flex-grow-1">{{ p.nombre }}</span>
+                        <span class="fw-bold text-warning">{{ p.total_vendido }}</span>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small">No hay datos.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row g-3 mt-2">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">💰 Rentabilidad (precio - costo ingredientes)</h6>
+                    <div class="table-responsive">
+                        <table class="table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Precio</th>
+                                    <th>Costo</th>
+                                    <th>Margen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in datos_tab.get('rentabilidad', []) %}
+                                <tr>
+                                    <td>{{ p.nombre }}</td>
+                                    <td>${{ "%.2f"|format(p.precio) }}</td>
+                                    <td>${{ "%.2f"|format(p.costo) }}</td>
+                                    <td class="{% if p.margen > 0 %}text-success{% else %}text-danger{% endif %}">
+                                        ${{ "%.2f"|format(p.margen) }}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">No hay datos.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- ========================== PESTAÑA INVENTARIO ========================== -->
+<div id="tab-inventario" class="tab-pane {% if tab_activa == 'inventario' %}active{% endif %}">
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="kpi-card">
+                <div class="kpi-label"><i class="bi bi-box-seam"></i> Total items</div>
+                <div class="kpi-value">{{ datos_tab.get('total_items', 0) }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="kpi-card">
+                <div class="kpi-label"><i class="bi bi-exclamation-triangle text-danger"></i> Stock crítico</div>
+                <div class="kpi-value text-danger">{{ datos_tab.get('criticos', 0) }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="kpi-card">
+                <div class="kpi-label"><i class="bi bi-check-circle text-success"></i> Ok</div>
+                <div class="kpi-value text-success">{{ datos_tab.get('total_items', 0) - datos_tab.get('criticos', 0) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">📦 Estado del inventario</h6>
+                    <div class="table-responsive">
+                        <table class="table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Ingrediente</th>
+                                    <th>Unidad</th>
+                                    <th>Stock actual</th>
+                                    <th>Stock mínimo</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for i in datos_tab.get('ingredientes', []) %}
+                                <tr>
+                                    <td>{{ i.nombre }}</td>
+                                    <td>{{ i.unidad }}</td>
+                                    <td class="{% if i.estado == 'Crítico' %}text-danger fw-bold{% endif %}">
+                                        {{ "%.1f"|format(i.stock_actual) }}
+                                    </td>
+                                    <td>{{ "%.1f"|format(i.stock_minimo) }}</td>
+                                    <td>
+                                        {% if i.estado == 'Crítico' %}
+                                            <span class="badge-custom badge-danger">Crítico</span>
+                                        {% else %}
+                                            <span class="badge-custom badge-success">Ok</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-3">No hay ingredientes.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">🔄 Últimos movimientos</h6>
+                    {% for m in datos_tab.get('movimientos', []) %}
+                    <div class="small py-1 border-bottom">
+                        <div><strong>{{ m.ingrediente }}</strong> +{{ "%.1f"|format(m.cantidad) }}</div>
+                        <div class="text-muted">${{ "%.2f"|format(m.costo_total) }} · {{ m.fecha|format_date }}</div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small">No hay movimientos.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================== PESTAÑA HISTORIAL ========================== -->
+<div id="tab-historial" class="tab-pane {% if tab_activa == 'historial' %}active{% endif %}">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">📦 Pedidos recientes</h6>
+                    {% for p in datos_tab.get('pedidos', []) %}
+                    <div class="small py-1 border-bottom">
+                        <div><strong>#{{ p.id }}</strong> · Mesa {{ p.mesa }}</div>
+                        <div class="text-muted">{{ p.estado }} · {{ p.created_at|format_date }}</div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small">No hay pedidos recientes.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">💰 Ventas recientes</h6>
+                    {% for v in datos_tab.get('ventas', []) %}
+                    <div class="small py-1 border-bottom">
+                        <div><strong>#{{ v.id }}</strong> · Pedido #{{ v.pedido_id }}</div>
+                        <div class="text-success">${{ "%.2f"|format(v.monto_total|default(0)) }} · {{ v.fecha|format_date }}</div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small">No hay ventas recientes.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">💸 Gastos recientes</h6>
+                    {% for g in datos_tab.get('gastos', []) %}
+                    <div class="small py-1 border-bottom">
+                        <div><strong>{{ g.descripcion }}</strong></div>
+                        <div class="text-danger">-${{ "%.2f"|format(g.monto|default(0)) }} · {{ g.fecha|format_date }}</div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small">No hay gastos recientes.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function aplicarFiltros() {
+    const fecha_inicio = document.getElementById('fecha_inicio').value;
+    const fecha_fin = document.getElementById('fecha_fin').value;
+    const tab = '{{ tab_activa }}';
+    let url = "{{ url_for('estadisticas') }}?tab=" + tab;
+    if (fecha_inicio) url += "&fecha_inicio=" + fecha_inicio;
+    if (fecha_fin) url += "&fecha_fin=" + fecha_fin;
+    window.location.href = url;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfica de Ventas
+    const ventasDiarias = {{ ventas_diarias|tojson }};
+    const ventasLabels = ventasDiarias.map(d => d.fecha);
+    const ventasData = ventasDiarias.map(d => d.total);
+
+    new Chart(document.getElementById('ventasChart'), {
+        type: 'bar',
+        data: {
+            labels: ventasLabels,
+            datasets: [{
+                label: 'Ventas ($)',
+                data: ventasData,
+                backgroundColor: '#2c3e66',
+                borderRadius: 4,
+                barPercentage: 0.6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#e9ecef' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // Gráfica de Gastos
+    const gastosDiarios = {{ gastos_diarios|tojson }};
+    const gastosLabels = gastosDiarios.map(d => d.fecha);
+    const gastosData = gastosDiarios.map(d => d.total);
+
+    new Chart(document.getElementById('gastosChart'), {
+        type: 'bar',
+        data: {
+            labels: gastosLabels,
+            datasets: [{
+                label: 'Gastos ($)',
+                data: gastosData,
+                backgroundColor: '#d97706',
+                borderRadius: 4,
+                barPercentage: 0.6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#e9ecef' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+});
+</script>
+
 {% endblock %}

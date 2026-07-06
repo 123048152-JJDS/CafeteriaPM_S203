@@ -12,7 +12,6 @@ class Rol(Base):
     usuarios = relationship("Usuario", back_populates="rol")
     estados_pedido = relationship("EstadoPedido", back_populates="rol")
 
-
 class Categoria(Base):
     __tablename__ = "categorias"
     id = Column(Integer, primary_key=True)
@@ -22,7 +21,6 @@ class Categoria(Base):
     productos = relationship("Producto", back_populates="categoria")
     gastos = relationship("Gasto", back_populates="categoria")
 
-
 class MetodoPago(Base):
     __tablename__ = "metodos_pago"
     id = Column(Integer, primary_key=True)
@@ -30,7 +28,6 @@ class MetodoPago(Base):
     descripcion = Column(String(255))
 
     ventas = relationship("Venta", back_populates="metodo_pago")
-
 
 class EstadoPedido(Base):
     __tablename__ = "estados_pedido"
@@ -44,8 +41,6 @@ class EstadoPedido(Base):
     historial_origen = relationship("HistorialEstadoPedido", foreign_keys="HistorialEstadoPedido.id_estado_origen", back_populates="estado_origen")
     historial_destino = relationship("HistorialEstadoPedido", foreign_keys="HistorialEstadoPedido.id_estado_destino", back_populates="estado_destino")
 
-
-# ---------- TABLAS PRINCIPALES ----------
 class Usuario(Base):
     __tablename__ = "usuarios"
     id = Column(Integer, primary_key=True)
@@ -63,7 +58,6 @@ class Usuario(Base):
     compras = relationship("CompraSuministro", back_populates="usuario")
     historial_cambios = relationship("HistorialEstadoPedido", back_populates="usuario")
 
-
 class Mesa(Base):
     __tablename__ = "mesas"
     id = Column(Integer, primary_key=True)
@@ -71,7 +65,6 @@ class Mesa(Base):
     capacidad = Column(Integer, nullable=False, CheckConstraint("capacidad > 0"))
 
     pedidos = relationship("Pedido", back_populates="mesa")
-
 
 class Producto(Base):
     __tablename__ = "productos"
@@ -88,7 +81,6 @@ class Producto(Base):
     detalles_pedido = relationship("DetallePedido", back_populates="producto")
     ingredientes = relationship("ProductoIngrediente", back_populates="producto")
 
-
 class Ingrediente(Base):
     __tablename__ = "ingredientes"
     id = Column(Integer, primary_key=True)
@@ -101,7 +93,6 @@ class Ingrediente(Base):
     productos = relationship("ProductoIngrediente", back_populates="ingrediente")
     compras = relationship("CompraSuministro", back_populates="ingrediente")
 
-
 class ProductoIngrediente(Base):
     __tablename__ = "producto_ingrediente"
     id_producto = Column(Integer, ForeignKey("productos.id", ondelete="CASCADE"), primary_key=True)
@@ -110,7 +101,6 @@ class ProductoIngrediente(Base):
 
     producto = relationship("Producto", back_populates="ingredientes")
     ingrediente = relationship("Ingrediente", back_populates="productos")
-
 
 class Pedido(Base):
     __tablename__ = "pedidos"
@@ -128,7 +118,6 @@ class Pedido(Base):
     historial = relationship("HistorialEstadoPedido", back_populates="pedido", cascade="all, delete-orphan")
     venta = relationship("Venta", back_populates="pedido", uselist=False)
 
-
 class DetallePedido(Base):
     __tablename__ = "detalle_pedido"
     id = Column(Integer, primary_key=True)
@@ -143,7 +132,6 @@ class DetallePedido(Base):
     producto = relationship("Producto", back_populates="detalles_pedido")
     observaciones = relationship("DetalleObservacion", back_populates="detalle", cascade="all, delete-orphan")
 
-
 class DetalleObservacion(Base):
     __tablename__ = "detalle_observaciones"
     id = Column(Integer, primary_key=True)
@@ -151,7 +139,6 @@ class DetalleObservacion(Base):
     observacion = Column(String(255), nullable=False)
 
     detalle = relationship("DetallePedido", back_populates="observaciones")
-
 
 class HistorialEstadoPedido(Base):
     __tablename__ = "historial_estados_pedido"
@@ -166,7 +153,6 @@ class HistorialEstadoPedido(Base):
     estado_origen = relationship("EstadoPedido", foreign_keys=[id_estado_origen], back_populates="historial_origen")
     estado_destino = relationship("EstadoPedido", foreign_keys=[id_estado_destino], back_populates="historial_destino")
     usuario = relationship("Usuario", back_populates="historial_cambios")
-
 
 class Venta(Base):
     __tablename__ = "ventas"
@@ -188,7 +174,6 @@ class Venta(Base):
             return self.monto_recibido - self.monto_total
         return None
 
-
 class Gasto(Base):
     __tablename__ = "gastos"
     id = Column(Integer, primary_key=True)
@@ -201,7 +186,6 @@ class Gasto(Base):
 
     categoria = relationship("Categoria", back_populates="gastos")
     usuario = relationship("Usuario", back_populates="gastos")
-
 
 class CompraSuministro(Base):
     __tablename__ = "compras_suministros"

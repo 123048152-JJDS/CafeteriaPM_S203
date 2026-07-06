@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+{% block title %}Inventario{% endblock %}
+{% block page_title %}Inventario{% endblock %}
+{% block page_subtitle %}Control de insumos{% endblock %}
+
+{% block content %}
+
+{% if stock_bajo %}
+<div class="alert alert-danger d-flex align-items-center" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <div>
+        <strong>Stock crítico:</strong>
+        {% for ing in stock_bajo %}
+            {{ ing.nombre }} ({{ "%.1f"|format(ing.stock_actual) }} {{ ing.unidad }}){% if not loop.last %}, {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="alert alert-success d-flex align-items-center" role="alert">
+    <i class="bi bi-check-circle-fill me-2"></i>
+    <div>Todos los ingredientes tienen stock suficiente.</div>
+</div>
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex gap-2 flex-wrap">
+        <div class="input-group input-group-sm" style="max-width:200px;">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" placeholder="Buscar insumo..." id="buscarInsumo" onkeyup="filtrarInventario()">
+        </div>
+        <select class="form-select form-select-sm" style="width:auto;" id="filtroEstado" onchange="filtrarInventario()">
+            <option value="">Todos</option>
+            <option value="critico">Crítico</option>
+            <option value="ok">Ok</option>
+        </select>
+        <button class="btn btn-sm btn-primary-custom" onclick="filtrarInventario()">Filtrar</button>
+    </div>
+    <div>
+        <button class="btn btn-sm btn-accent me-1" data-bs-toggle="modal" data-bs-target="#nuevaCompraModal">
+            <i class="bi bi-plus-circle"></i> Registrar compra
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#nuevoInsumoModal">
+            <i class="bi bi-plus-circle"></i> Nuevo insumo
+        </button>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table-custom" id="tablaInventario">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Ingrediente</th>
+                <th>Unidad</th>
+                <th>Stock actual</th>
+                <th>Stock mínimo</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ing in ingredientes %}
+            <tr data-nombre="{{ ing.nombre|lower }}" data-estado="{% if ing.stock_actual <= ing.stock_minimo %}critico{% else %}ok{% endif %}">
+                <td>{{ ing.id }}</td>
+                <td>{{ ing.nombre }}</td>
+                <td>{{ ing.unidad }}</td>
+                <td class="{% if ing.stock_actual <= ing.stock_minimo %}text-danger fw-bold{% endif %}">
+                    {{ "%.1f"|format(ing.stock_actual) }}
+                </td>
+                <td>{{ "%.1f"|format(ing.stock_minimo) }}</td>
+                <td>
+                    {% if ing.stock_actual <= ing.stock_minimo %}
+                        <span class="badge-custom badge-danger">Crítico</span>
+                    {% else %}
+                        <span class="badge-custom badge-success">Ok</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#editarIngredienteModal"
+                            data-id="{{ ing.id }}"
+                            data-nombre="{{ ing.nombre }}"
+                            data-unidad="{{ ing.unidad }}"
+                            data-stock_actual="{{ ing.stock_actual }}"
+                            data-stock_minimo="{{ ing.stock_minimo }}"
+                            data-costo_unitario="{{ ing.costo_unitario }}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#ajustarStockModal"
+                            data-id="{{ ing.id }}"
+                            data-nombre="{{ ing.nombre }}"
+                            data-stock_actual="{{ ing.stock_actual }}">
+                        <i class="bi bi-sliders2"></i>
+                    </button>
+                    <form action="{{ url_for('eliminar_ingrediente', ingrediente_id=ing.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar este ingrediente?')">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="text-center text-muted py-3">No hay ingredientes registrados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+function filtrarInventario() {
+    const busqueda = document.getElementById('buscarInsumo').value.toLowerCase();
+    const estado = document.getElementById('filtroEstado').value;
+    const rows = document.querySelectorAll('#tablaInventario tbody tr');
+    rows.forEach(row => {
+        const nombre = row.dataset.nombre || '';
+        const rowEstado = row.dataset.estado || '';
+        let mostrar = true;
+        if (busqueda && !nombre.includes(busqueda)) mostrar = false;
+        if (estado && rowEstado !== estado) mostrar = false;
+        row.style.display = mostrar ? '' : 'none';
+    });
+}
+</script>
+
+<div class="modal fade" id="editarIngredienteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar ingrediente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="editarIngredienteForm">
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <label class="form-label small">Nombre</label>
+                        <input type="text" class="form-control form-control-sm" name="nombre" id="edit_nombre">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Unidad</label>
+                        <select class="form-select form-select-sm" name="unidad" id="edit_unidad">
+                            <option value="kg">kg</option>
+                            <option value="L">L</option>
+                            <option value="piezas">piezas</option>
+                            <option value="g">g</option>
+                            <option value="ml">ml</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Stock actual</label>
+                        <input type="number" step="0.1" class="form-control form-control-sm" name="stock_actual" id="edit_stock_actual">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Stock mínimo</label>
+                        <input type="number" step="0.1" class="form-control form-control-sm" name="stock_minimo" id="edit_stock_minimo">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Costo unitario ($)</label>
+                        <input type="number" step="0.01" class="form-control form-control-sm" name="costo_unitario" id="edit_costo_unitario">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-accent">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="ajustarStockModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-sliders2"></i> Ajustar stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="ajustarStockForm">
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <label class="form-label small">Ingrediente</label>
+                        <input type="text" class="form-control form-control-sm" id="ajuste_nombre" disabled>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Stock actual</label>
+                        <input type="text" class="form-control form-control-sm" id="ajuste_stock_actual" disabled>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Cantidad a <span id="ajuste_tipo_label">sumar</span></label>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="cambiarTipoAjuste('sumar')">+ Sumar</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="cambiarTipoAjuste('restar')">- Restar</button>
+                        </div>
+                        <input type="number" step="0.1" class="form-control form-control-sm mt-2" name="cantidad" id="ajuste_cantidad" placeholder="Cantidad" required>
+                        <input type="hidden" name="tipo" id="ajuste_tipo" value="sumar">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-accent">Aplicar ajuste</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="nuevaCompraModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-cart-plus"></i> Registrar compra</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('registrar_compra') }}">
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <label class="form-label small">Ingrediente</label>
+                        <select class="form-select form-select-sm" name="id_ingrediente" required>
+                            {% for ing in ingredientes %}
+                                <option value="{{ ing.id }}">{{ ing.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Cantidad</label>
+                        <input type="number" step="0.1" class="form-control form-control-sm" name="cantidad" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Costo total ($)</label>
+                        <input type="number" step="0.01" class="form-control form-control-sm" name="costo_total" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Fecha</label>
+                        <input type="date" class="form-control form-control-sm" name="fecha" value="{{ now|default('') }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-accent">Guardar compra</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="nuevoInsumoModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-box-seam"></i> Nuevo insumo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('crear_ingrediente') }}">
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <label class="form-label small">Nombre</label>
+                        <input type="text" class="form-control form-control-sm" name="nombre" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Unidad</label>
+                        <select class="form-select form-select-sm" name="unidad" required>
+                            <option value="kg">kg</option>
+                            <option value="L">L</option>
+                            <option value="piezas">piezas</option>
+                            <option value="g">g</option>
+                            <option value="ml">ml</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Stock inicial</label>
+                        <input type="number" step="0.1" class="form-control form-control-sm" name="stock_actual" value="0">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Stock mínimo</label>
+                        <input type="number" step="0.1" class="form-control form-control-sm" name="stock_minimo" value="0">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Costo unitario ($)</label>
+                        <input type="number" step="0.01" class="form-control form-control-sm" name="costo_unitario" value="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-accent">Crear insumo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editModal = document.getElementById('editarIngredienteModal');
+    if (editModal) {
+        editModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const id = button.getAttribute('data-id');
+            const nombre = button.getAttribute('data-nombre');
+            const unidad = button.getAttribute('data-unidad');
+            const stock_actual = button.getAttribute('data-stock_actual');
+            const stock_minimo = button.getAttribute('data-stock_minimo');
+            const costo_unitario = button.getAttribute('data-costo_unitario');
+
+            document.getElementById('edit_nombre').value = nombre || '';
+            document.getElementById('edit_unidad').value = unidad || 'kg';
+            document.getElementById('edit_stock_actual').value = stock_actual || 0;
+            document.getElementById('edit_stock_minimo').value = stock_minimo || 0;
+            document.getElementById('edit_costo_unitario').value = costo_unitario || 0;
+
+            const form = document.getElementById('editarIngredienteForm');
+            form.action = "{{ url_for('editar_ingrediente', ingrediente_id=0) }}".replace('0', id);
+        });
+    }
+
+    const ajusteModal = document.getElementById('ajustarStockModal');
+    if (ajusteModal) {
+        ajusteModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const id = button.getAttribute('data-id');
+            const nombre = button.getAttribute('data-nombre');
+            const stock_actual = button.getAttribute('data-stock_actual');
+
+            document.getElementById('ajuste_nombre').value = nombre || '';
+            document.getElementById('ajuste_stock_actual').value = stock_actual || 0;
+            document.getElementById('ajuste_cantidad').value = '';
+            document.getElementById('ajuste_tipo').value = 'sumar';
+            document.getElementById('ajuste_tipo_label').textContent = 'sumar';
+
+            const form = document.getElementById('ajustarStockForm');
+            form.action = "{{ url_for('ajustar_stock', ingrediente_id=0) }}".replace('0', id);
+        });
+    }
+});
+
+function cambiarTipoAjuste(tipo) {
+    document.getElementById('ajuste_tipo').value = tipo;
+    document.getElementById('ajuste_tipo_label').textContent = tipo === 'sumar' ? 'sumar' : 'restar';
+}
+</script>
+
+{% endblock %}

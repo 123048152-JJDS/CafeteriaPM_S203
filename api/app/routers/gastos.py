@@ -9,7 +9,6 @@ from app.schemas.gasto import GastoCreate, GastoOut
 
 router = APIRouter(prefix="/gastos", tags=["Gastos"])
 
-
 @router.get("/", response_model=List[GastoOut])
 def get_gastos(
     fecha_inicio: Optional[str] = None,
