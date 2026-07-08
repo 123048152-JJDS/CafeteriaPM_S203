@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/stats/ventas-diarias?dias=7"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+queryParams:
+  dias: "7"
+order: 3000

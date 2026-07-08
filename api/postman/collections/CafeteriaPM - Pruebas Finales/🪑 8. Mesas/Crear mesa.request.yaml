@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/mesas/"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "numero": 12,
+        "capacidad": 6
+    }
+order: 2000

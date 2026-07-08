@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/usuarios/"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "nombre": "María Cruz",
+        "email": "maria@cafe.com",
+        "password": "mesero123",
+        "id_rol": 4,
+        "activo": true
+    }
+order: 2000

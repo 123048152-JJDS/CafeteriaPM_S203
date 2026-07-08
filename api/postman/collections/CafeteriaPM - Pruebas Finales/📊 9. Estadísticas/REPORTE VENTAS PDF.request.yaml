@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{base_url}}/stats/reporte-ventas/pdf?fecha_inicio=2026-06-01&fecha_fin=2026-07-06"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+queryParams:
+  fecha_inicio: 2026-06-01
+  fecha_fin: 2026-07-06
+order: 11000

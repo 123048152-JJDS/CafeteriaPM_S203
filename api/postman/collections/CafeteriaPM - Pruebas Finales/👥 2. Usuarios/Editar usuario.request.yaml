@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/usuarios/4"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "nombre": "María Cruz Actualizada",
+        "activo": false
+    }
+order: 3000

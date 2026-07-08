@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user, require_roles
 from app.models.table import Table
 from app.models.order import Order, OrderStatus, OrderStatusHistory
-from app.schemas.mesa import MesaCreate, MesaOut  # ← Importación correcta
+from app.schemas.mesa import MesaCreate, MesaOut 
 
 router = APIRouter(prefix="/mesas", tags=["Mesas"])
 

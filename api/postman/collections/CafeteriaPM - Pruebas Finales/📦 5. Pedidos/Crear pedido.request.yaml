@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{base_url}}/pedidos/"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "id_mesa": 1,
+        "detalles": [
+            {
+                "id_producto": 1,
+                "cantidad": 2,
+                "observacion": "Sin azúcar"
+            },
+            {
+                "id_producto": 3,
+                "cantidad": 1
+            }
+        ]
+    }
+order: 3000

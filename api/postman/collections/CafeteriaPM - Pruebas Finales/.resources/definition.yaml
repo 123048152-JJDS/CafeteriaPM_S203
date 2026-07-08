@@ -1,0 +1,12 @@
+$kind: collection
+name: CafeteriaPM - Pruebas Finales
+description: Colección completa para pruebas de la API
+variables:
+  base_url: http://localhost:8000
+  token: ""
+auth:
+  - id: ca7c9af9-d668-4598-ab98-cce19443ad2b
+    type: bearer
+    name: Bearer Token
+    credentials:
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sIjoiYWRtaW4iLCJleHAiOjE3ODMzNTkwMjN9.kDGR5zF92_cGrsPrmf1KmoVt6TK3TNVLxDXvmNjwvRY

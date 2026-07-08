@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/productos/ingredientes/stock-bajo"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+order: 5000

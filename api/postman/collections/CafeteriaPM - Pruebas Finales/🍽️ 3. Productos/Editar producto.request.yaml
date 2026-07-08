@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/productos/7"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "precio": 75.00,
+        "disponible": false
+    }
+order: 3000

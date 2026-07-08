@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{base_url}}/stats/reporte-productos/xlsx?categoria_id=1&disponible=true"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+queryParams:
+  categoria_id: "1"
+  disponible: "true"
+order: 16000
