@@ -7,23 +7,9 @@ from app.core.database import get_db
 from app.core.security import get_current_user, require_roles
 from app.models.table import Table
 from app.models.order import Order, OrderStatus, OrderStatusHistory
-from pydantic import BaseModel
+from app.schemas.mesa import MesaCreate, MesaOut  # ← Importación correcta
 
 router = APIRouter(prefix="/mesas", tags=["Mesas"])
-
-class MesaCreate(BaseModel):
-    numero: int
-    capacidad: int
-
-class MesaOut(BaseModel):
-    id: int
-    numero: int
-    capacidad: int
-    estado: str  # "disponible", "ocupada", "reservada"
-    pedido_activo_id: Optional[int] = None
-
-    class Config:
-        from_attributes = True
 
 def get_estado_mesa(db: Session, mesa_id: int):
     estados_activos = db.query(OrderStatus).filter(
@@ -238,7 +224,6 @@ def reservar_mesa(
     db.refresh(pedido)
 
     return {"message": "Mesa reservada correctamente", "pedido_id": pedido.id}
-
 
 @router.patch("/{mesa_id}/cancelar-reserva")
 def cancelar_reserva(

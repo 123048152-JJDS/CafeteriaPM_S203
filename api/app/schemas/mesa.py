@@ -1,21 +1,14 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import date, datetime
-from app.schemas.product import CategoryOut  
-from app.schemas.user import UserOut        
 
-class GastoCreate(BaseModel):
-    descripcion: str
-    monto: float
-    id_categoria: Optional[int] = None
-    fecha: date
+class MesaCreate(BaseModel):
+    numero: int
+    capacidad: int
 
-class GastoOut(BaseModel):
+class MesaOut(BaseModel):
     id: int
-    descripcion: str
-    monto: float
-    categoria: Optional[CategoryOut] = None  
-    usuario: Optional[UserOut] = None      
-    fecha: date
-    created_at: datetime
+    numero: int
+    capacidad: int
+    estado: str  # "disponible", "ocupada", "reservada"
+    pedido_activo_id: Optional[int] = None
     model_config = {"from_attributes": True}
