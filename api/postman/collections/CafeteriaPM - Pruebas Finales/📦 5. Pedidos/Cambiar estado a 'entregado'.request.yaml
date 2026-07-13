@@ -10,4 +10,5 @@ body:
     {
         "id_estado_nuevo": 4
     }
+examples: .resources/Cambiar estado a 'entregado'.resources/examples
 order: 6000

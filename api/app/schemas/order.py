@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional, List
 from datetime import datetime
 from app.schemas.product import ProductOut
@@ -37,6 +37,18 @@ class OrderDetailOut(BaseModel):
     subtotal: Optional[float] = None
     observaciones: List[str] = []
     model_config = {"from_attributes": True}
+
+    @field_validator('observaciones', mode='before')
+    @classmethod
+    def parse_observaciones(cls, v):
+        if v is None:
+            return []
+        if isinstance(v, list):
+            return [
+                item.observacion if hasattr(item, 'observacion') else str(item)
+                for item in v
+            ]
+        return v
 
 class OrderOut(BaseModel):
     id: int

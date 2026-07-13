@@ -1,4 +1,5 @@
 from datetime import datetime
+from sqlite3 import IntegrityError
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -112,13 +113,19 @@ def delete_mesa(
     estado, pedido_id = get_estado_mesa(db, mesa.id)
     if estado != "disponible":
         raise HTTPException(
-            400, 
+            400,
             f"No se puede eliminar la mesa porque está {estado}. "
             f"Primero debe cerrar el pedido #{pedido_id}."
         )
-    
-    db.delete(mesa)
-    db.commit()
+    try:
+        db.delete(mesa)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede eliminar la mesa porque tiene pedidos históricos asociados."
+        )
     
 @router.patch("/{mesa_id}/ocupar")
 def ocupar_mesa(

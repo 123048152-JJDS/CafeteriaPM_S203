@@ -3,4 +3,4 @@ values:
   - key: base_url
     value: 'http://localhost:8000'
   - key: token
-    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sIjoiYWRtaW4iLCJleHAiOjE3ODMzNTkwMjN9.kDGR5zF92_cGrsPrmf1KmoVt6TK3TNVLxDXvmNjwvRY
+    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sIjoiYWRtaW4iLCJleHAiOjE3ODM1NzQ1MjV9.je5rH6Y4mbCMVI7kz0UKx0_HOE-GB1PlQJhPtzsaCdw

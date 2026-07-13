@@ -5,7 +5,8 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
 from sqlalchemy import cast, String
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.exc import IntegrityError
 
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
@@ -45,7 +46,10 @@ def get_pedidos(
     current_user = Depends(get_current_user)
 ):
     try:
-        q = db.query(Order)
+        q = db.query(Order).options(
+            joinedload(Order.detalles).joinedload(OrderDetail.observaciones)
+        )
+        
         if estado_id:
             q = q.filter(Order.id_estado_actual == estado_id)
         if mesa_id:
@@ -237,8 +241,15 @@ def delete_pedido(
         raise HTTPException(404, "Pedido no encontrado")
     if pedido.estado_actual.nombre != "cancelado":
         raise HTTPException(400, "Solo se pueden eliminar pedidos cancelados")
-    db.delete(pedido)
-    db.commit()
+    try:
+        db.delete(pedido)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede eliminar el pedido porque tiene una venta asociada."
+        )
 
 @router.get("/{pedido_id}/ticket/pdf")
 def generar_ticket_pdf(
