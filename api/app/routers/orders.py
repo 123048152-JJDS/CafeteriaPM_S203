@@ -114,6 +114,12 @@ def get_pedido(pedido_id: int, db: Session = Depends(get_db), _=Depends(get_curr
     pedido = db.query(Order).filter(Order.id == pedido_id).first()
     if not pedido:
         raise HTTPException(404, "Pedido no encontrado")
+
+    total = 0.0
+    for detalle in pedido.detalles:
+        total += float(detalle.precio_unitario) * detalle.cantidad
+    pedido.total = total
+
     return pedido
 
 @router.post("/", response_model=OrderOut, status_code=201)

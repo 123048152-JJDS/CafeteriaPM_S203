@@ -1,10 +1,12 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.core.database import get_db
 from app.core.security import get_current_user, require_roles
 from app.models.sale import Sale, PaymentMethod
-from app.models.order import Order, OrderStatus
+from app.models.order import Order, OrderStatus, OrderStatusHistory
 from app.models.user import User
 from app.schemas.sale import SaleCreate, SaleOut, PaymentMethodOut
 
@@ -74,16 +76,11 @@ def create_venta(
 
     estado_pagado = db.query(OrderStatus).filter(OrderStatus.nombre == "pagado").first()
     if estado_pagado:
-        pedido.id_estado_actual = estado_pagado.id
-        pedido.updated_at = pedido.updated_at
+        estado_anterior_id = pedido.id_estado_actual  # capturar ANTES de sobrescribir
 
-        from app.models.order import OrderStatusHistory
-        historial = OrderStatusHistory(
-            id_pedido=pedido.id,
-            id_estado_origen=pedido.id_estado_actual, 
-        )
-        estado_anterior_id = pedido.id_estado_actual
         pedido.id_estado_actual = estado_pagado.id
+        pedido.updated_at = datetime.now()
+
         historial = OrderStatusHistory(
             id_pedido=pedido.id,
             id_estado_origen=estado_anterior_id,
