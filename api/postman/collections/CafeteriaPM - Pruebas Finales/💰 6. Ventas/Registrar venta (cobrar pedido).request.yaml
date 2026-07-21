@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{base_url}}/ventas/"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "id_pedido": 27,
+        "id_metodo_pago": 1,
+        "monto_recibido": 200.00
+    }
+order: 2000

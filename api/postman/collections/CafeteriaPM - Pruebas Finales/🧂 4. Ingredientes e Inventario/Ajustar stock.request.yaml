@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/productos/ingredientes/1/ajustar-stock?cantidad=5"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+queryParams:
+  cantidad: "5"
+order: 6000

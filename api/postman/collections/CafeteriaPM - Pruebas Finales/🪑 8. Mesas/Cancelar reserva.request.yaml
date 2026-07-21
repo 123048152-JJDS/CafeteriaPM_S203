@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/mesas/1/cancelar-reserva"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+order: 6000

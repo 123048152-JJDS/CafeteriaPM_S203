@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/productos/ingredientes/10"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "stock_actual": 2.0,
+        "stock_minimo": 0.5
+    }
+order: 3000

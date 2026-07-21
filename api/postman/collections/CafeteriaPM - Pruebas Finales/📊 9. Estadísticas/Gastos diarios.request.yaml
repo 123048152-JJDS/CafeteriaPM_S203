@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/stats/gastos-diarios?dias=7"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+queryParams:
+  dias: "7"
+order: 4000

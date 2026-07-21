@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/stats/reporte-inventario/pdf"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+order: 19000

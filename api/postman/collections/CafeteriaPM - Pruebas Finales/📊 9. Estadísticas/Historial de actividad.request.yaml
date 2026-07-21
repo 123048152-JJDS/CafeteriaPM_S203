@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/stats/historial-actividad?limite=10"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+queryParams:
+  limite: "10"
+order: 10000

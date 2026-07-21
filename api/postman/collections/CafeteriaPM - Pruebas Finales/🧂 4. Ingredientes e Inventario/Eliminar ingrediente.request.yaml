@@ -1,0 +1,7 @@
+$kind: http-request
+name: Eliminar ingrediente
+url: "{{base_url}}/productos/ingredientes/11"
+method: DELETE
+headers:
+  Authorization: Bearer {{token}}
+order: 4000

@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/pedidos/27/estado"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "id_estado_nuevo": 4
+    }
+examples: .resources/Cambiar estado a 'entregado'.resources/examples
+order: 6000

@@ -1,0 +1,1473 @@
+{
+	"info": {
+		"_postman_id": "cafeteriapm-final",
+		"name": "CafeteriaPM - Pruebas Finales",
+		"description": "Colección completa para pruebas de la API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "🔐 1. Autenticación",
+			"item": [
+				{
+					"name": "Login (admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();",
+									"pm.environment.set(\"token\", jsonData.access_token);",
+									"pm.test(\"Login exitoso\", function() {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.rol).to.eql(\"admin\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@cafe.com\",\n    \"password\": \"Admin123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "👥 2. Usuarios",
+			"item": [
+				{
+					"name": "Listar usuarios",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/usuarios/",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios", ""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear usuario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nombre\": \"María Cruz\",\n    \"email\": \"maria@cafe.com\",\n    \"password\": \"mesero123\",\n    \"id_rol\": 4,\n    \"activo\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/usuarios/",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios", ""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Editar usuario",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nombre\": \"María Cruz Actualizada\",\n    \"activo\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/usuarios/4",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios", "4"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar usuario",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/usuarios/4",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios", "4"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener perfil propio",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/usuarios/me",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios", "me"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🍽️ 3. Productos",
+			"item": [
+				{
+					"name": "Listar productos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/productos/",
+							"host": ["{{base_url}}"],
+							"path": ["productos", ""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear producto",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nombre\": \"Café Mocha\",\n    \"descripcion\": \"Café con chocolate y crema\",\n    \"precio\": 70.00,\n    \"id_categoria\": 1,\n    \"disponible\": true,\n    \"ingredientes\": [\n        {\"id_ingrediente\": 1, \"cantidad\": 0.020},\n        {\"id_ingrediente\": 2, \"cantidad\": 0.150}\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/productos/",
+							"host": ["{{base_url}}"],
+							"path": ["productos", ""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Editar producto",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"precio\": 75.00,\n    \"disponible\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/productos/7",
+							"host": ["{{base_url}}"],
+							"path": ["productos", "7"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar producto",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/productos/7",
+							"host": ["{{base_url}}"],
+							"path": ["productos", "7"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Toggle disponibilidad",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/productos/1/toggle",
+							"host": ["{{base_url}}"],
+							"path": ["productos", "1", "toggle"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🧂 4. Ingredientes e Inventario",
+			"item": [
+				{
+					"name": "Listar ingredientes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/productos/ingredientes",
+							"host": ["{{base_url}}"],
+							"path": ["productos", "ingredientes"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear ingrediente",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nombre\": \"Canela\",\n    \"unidad\": \"kg\",\n    \"stock_actual\": 0.5,\n    \"stock_minimo\": 0.1,\n    \"costo_unitario\": 80.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/productos/ingredientes",
+							"host": ["{{base_url}}"],
+							"path": ["productos", "ingredientes"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Editar ingrediente",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"stock_actual\": 2.0,\n    \"stock_minimo\": 0.5\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/productos/ingredientes/10",
+							"host": ["{{base_url}}"],
+							"path": ["productos", "ingredientes", "10"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar ingrediente",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/productos/ingredientes/10",
+							"host": ["{{base_url}}"],
+							"path": ["productos", "ingredientes", "10"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Stock bajo",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/productos/ingredientes/stock-bajo",
+							"host": ["{{base_url}}"],
+							"path": ["productos", "ingredientes", "stock-bajo"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Ajustar stock",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/productos/ingredientes/1/ajustar-stock?cantidad=5",
+							"host": ["{{base_url}}"],
+							"path": ["productos", "ingredientes", "1", "ajustar-stock"],
+							"query": [
+								{
+									"key": "cantidad",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📦 5. Pedidos",
+			"item": [
+				{
+					"name": "Listar pedidos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/pedidos/",
+							"host": ["{{base_url}}"],
+							"path": ["pedidos", ""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar pedidos con filtros",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/pedidos/?estado_id=1&mesa_id=1&limit=5",
+							"host": ["{{base_url}}"],
+							"path": ["pedidos", ""],
+							"query": [
+								{
+									"key": "estado_id",
+									"value": "1"
+								},
+								{
+									"key": "mesa_id",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear pedido",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_mesa\": 1,\n    \"detalles\": [\n        {\n            \"id_producto\": 1,\n            \"cantidad\": 2,\n            \"observacion\": \"Sin azúcar\"\n        },\n        {\n            \"id_producto\": 3,\n            \"cantidad\": 1\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pedidos/",
+							"host": ["{{base_url}}"],
+							"path": ["pedidos", ""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cambiar estado a 'en_preparacion'",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_estado_nuevo\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pedidos/27/estado",
+							"host": ["{{base_url}}"],
+							"path": ["pedidos", "27", "estado"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cambiar estado a 'listo' (descuenta stock)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_estado_nuevo\": 3\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pedidos/27/estado",
+							"host": ["{{base_url}}"],
+							"path": ["pedidos", "27", "estado"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cambiar estado a 'entregado'",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_estado_nuevo\": 4\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pedidos/27/estado",
+							"host": ["{{base_url}}"],
+							"path": ["pedidos", "27", "estado"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cola de cocina",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/pedidos/cola-cocina",
+							"host": ["{{base_url}}"],
+							"path": ["pedidos", "cola-cocina"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener ticket PDF",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/pedidos/27/ticket/pdf",
+							"host": ["{{base_url}}"],
+							"path": ["pedidos", "27", "ticket", "pdf"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "💰 6. Ventas",
+			"item": [
+				{
+					"name": "Listar ventas",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/ventas/",
+							"host": ["{{base_url}}"],
+							"path": ["ventas", ""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Registrar venta (cobrar pedido)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_pedido\": 27,\n    \"id_metodo_pago\": 1,\n    \"monto_recibido\": 200.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/ventas/",
+							"host": ["{{base_url}}"],
+							"path": ["ventas", ""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener métodos de pago",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/ventas/metodos-pago",
+							"host": ["{{base_url}}"],
+							"path": ["ventas", "metodos-pago"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "💸 7. Gastos",
+			"item": [
+				{
+					"name": "Listar gastos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/gastos/",
+							"host": ["{{base_url}}"],
+							"path": ["gastos", ""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Registrar gasto",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"descripcion\": \"Compra de leche\",\n    \"monto\": 85.00,\n    \"id_categoria\": 4,\n    \"fecha\": \"2026-07-06\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/gastos/",
+							"host": ["{{base_url}}"],
+							"path": ["gastos", ""]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🪑 8. Mesas",
+			"item": [
+				{
+					"name": "Listar mesas",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/mesas/",
+							"host": ["{{base_url}}"],
+							"path": ["mesas", ""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear mesa",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"numero\": 12,\n    \"capacidad\": 6\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/mesas/",
+							"host": ["{{base_url}}"],
+							"path": ["mesas", ""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Ocupar mesa",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/mesas/1/ocupar",
+							"host": ["{{base_url}}"],
+							"path": ["mesas", "1", "ocupar"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Liberar mesa",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/mesas/1/liberar",
+							"host": ["{{base_url}}"],
+							"path": ["mesas", "1", "liberar"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reservar mesa",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/mesas/1/reservar",
+							"host": ["{{base_url}}"],
+							"path": ["mesas", "1", "reservar"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cancelar reserva",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/mesas/1/cancelar-reserva",
+							"host": ["{{base_url}}"],
+							"path": ["mesas", "1", "cancelar-reserva"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar mesa",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/mesas/12",
+							"host": ["{{base_url}}"],
+							"path": ["mesas", "12"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📊 9. Estadísticas",
+			"item": [
+				{
+					"name": "Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "dashboard"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Resumen del mes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/resumen-mes",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "resumen-mes"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Ventas diarias",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/ventas-diarias?dias=7",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "ventas-diarias"],
+							"query": [
+								{
+									"key": "dias",
+									"value": "7"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Gastos diarios",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/gastos-diarios?dias=7",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "gastos-diarios"],
+							"query": [
+								{
+									"key": "dias",
+									"value": "7"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Lista de ventas (con filtros)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/ventas-lista?fecha_inicio=2026-06-01&fecha_fin=2026-07-06",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "ventas-lista"],
+							"query": [
+								{
+									"key": "fecha_inicio",
+									"value": "2026-06-01"
+								},
+								{
+									"key": "fecha_fin",
+									"value": "2026-07-06"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Lista de gastos (con filtros)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/gastos-lista?fecha_inicio=2026-06-01&fecha_fin=2026-07-06",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "gastos-lista"],
+							"query": [
+								{
+									"key": "fecha_inicio",
+									"value": "2026-06-01"
+								},
+								{
+									"key": "fecha_fin",
+									"value": "2026-07-06"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Productos más vendidos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/productos-mas-vendidos?limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "productos-mas-vendidos"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Estadísticas de productos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/productos-estadisticas",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "productos-estadisticas"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Estado del inventario",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/inventario-estado",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "inventario-estado"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Historial de actividad",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/historial-actividad?limite=10",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "historial-actividad"],
+							"query": [
+								{
+									"key": "limite",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "REPORTE VENTAS PDF",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/reporte-ventas/pdf?fecha_inicio=2026-06-01&fecha_fin=2026-07-06",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "reporte-ventas", "pdf"],
+							"query": [
+								{
+									"key": "fecha_inicio",
+									"value": "2026-06-01"
+								},
+								{
+									"key": "fecha_fin",
+									"value": "2026-07-06"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "REPORTE VENTAS XLSX",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/reporte-ventas/xlsx?fecha_inicio=2026-06-01&fecha_fin=2026-07-06",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "reporte-ventas", "xlsx"],
+							"query": [
+								{
+									"key": "fecha_inicio",
+									"value": "2026-06-01"
+								},
+								{
+									"key": "fecha_fin",
+									"value": "2026-07-06"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "REPORTE GASTOS PDF",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/reporte-gastos/pdf?fecha_inicio=2026-06-01&fecha_fin=2026-07-06",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "reporte-gastos", "pdf"],
+							"query": [
+								{
+									"key": "fecha_inicio",
+									"value": "2026-06-01"
+								},
+								{
+									"key": "fecha_fin",
+									"value": "2026-07-06"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "REPORTE GASTOS XLSX",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/reporte-gastos/xlsx?fecha_inicio=2026-06-01&fecha_fin=2026-07-06",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "reporte-gastos", "xlsx"],
+							"query": [
+								{
+									"key": "fecha_inicio",
+									"value": "2026-06-01"
+								},
+								{
+									"key": "fecha_fin",
+									"value": "2026-07-06"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "REPORTE PRODUCTOS PDF",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/reporte-productos/pdf?categoria_id=1&disponible=true",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "reporte-productos", "pdf"],
+							"query": [
+								{
+									"key": "categoria_id",
+									"value": "1"
+								},
+								{
+									"key": "disponible",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "REPORTE PRODUCTOS XLSX",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/reporte-productos/xlsx?categoria_id=1&disponible=true",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "reporte-productos", "xlsx"],
+							"query": [
+								{
+									"key": "categoria_id",
+									"value": "1"
+								},
+								{
+									"key": "disponible",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "REPORTE PEDIDOS PDF",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/reporte-pedidos/pdf?estado_id=5&fecha_inicio=2026-06-01&fecha_fin=2026-07-06",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "reporte-pedidos", "pdf"],
+							"query": [
+								{
+									"key": "estado_id",
+									"value": "5"
+								},
+								{
+									"key": "fecha_inicio",
+									"value": "2026-06-01"
+								},
+								{
+									"key": "fecha_fin",
+									"value": "2026-07-06"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "REPORTE PEDIDOS XLSX",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/reporte-pedidos/xlsx?estado_id=5&fecha_inicio=2026-06-01&fecha_fin=2026-07-06",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "reporte-pedidos", "xlsx"],
+							"query": [
+								{
+									"key": "estado_id",
+									"value": "5"
+								},
+								{
+									"key": "fecha_inicio",
+									"value": "2026-06-01"
+								},
+								{
+									"key": "fecha_fin",
+									"value": "2026-07-06"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "REPORTE INVENTARIO PDF",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/reporte-inventario/pdf",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "reporte-inventario", "pdf"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "REPORTE INVENTARIO XLSX",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/reporte-inventario/xlsx",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "reporte-inventario", "xlsx"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "REPORTE HISTORIAL PDF",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/reporte-historial/pdf?fecha_inicio=2026-06-01&fecha_fin=2026-07-06",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "reporte-historial", "pdf"],
+							"query": [
+								{
+									"key": "fecha_inicio",
+									"value": "2026-06-01"
+								},
+								{
+									"key": "fecha_fin",
+									"value": "2026-07-06"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "REPORTE HISTORIAL XLSX",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/stats/reporte-historial/xlsx?fecha_inicio=2026-06-01&fecha_fin=2026-07-06",
+							"host": ["{{base_url}}"],
+							"path": ["stats", "reporte-historial", "xlsx"],
+							"query": [
+								{
+									"key": "fecha_inicio",
+									"value": "2026-06-01"
+								},
+								{
+									"key": "fecha_fin",
+									"value": "2026-07-06"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🛒 10. Compras",
+			"item": [
+				{
+					"name": "Listar compras",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/compras/",
+							"host": ["{{base_url}}"],
+							"path": ["compras", ""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Registrar compra",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_ingrediente\": 2,\n    \"cantidad\": 5.0,\n    \"costo_total\": 85.00,\n    \"fecha\": \"2026-07-06\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/compras/",
+							"host": ["{{base_url}}"],
+							"path": ["compras", ""]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

@@ -1,3 +1,5 @@
+from sqlite3 import IntegrityError
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
@@ -86,8 +88,15 @@ def delete_ingrediente(
     ing = db.query(Ingredient).filter(Ingredient.id == id).first()
     if not ing:
         raise HTTPException(404, "Ingrediente no encontrado")
-    db.delete(ing)
-    db.commit()
+    try:
+        db.delete(ing)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede eliminar el ingrediente porque está siendo usado en productos o compras."
+        )
 
 @router.get("/", response_model=List[ProductOut])
 def get_productos(
@@ -177,8 +186,16 @@ def delete_producto(
     prod = db.query(Product).filter(Product.id == id).first()
     if not prod:
         raise HTTPException(404, "Producto no encontrado")
-    db.delete(prod)
-    db.commit()
+    try:
+        db.query(ProductIngredient).filter(ProductIngredient.id_producto == id).delete()
+        db.delete(prod)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede eliminar el producto porque tiene pedidos asociados."
+        )
 
 @router.patch("/{id}/toggle", response_model=ProductOut)
 def toggle_disponible(

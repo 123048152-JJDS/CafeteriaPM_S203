@@ -1,4 +1,5 @@
 from datetime import datetime
+from sqlite3 import IntegrityError
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -7,23 +8,9 @@ from app.core.database import get_db
 from app.core.security import get_current_user, require_roles
 from app.models.table import Table
 from app.models.order import Order, OrderStatus, OrderStatusHistory
-from pydantic import BaseModel
+from app.schemas.mesa import MesaCreate, MesaOut 
 
 router = APIRouter(prefix="/mesas", tags=["Mesas"])
-
-class MesaCreate(BaseModel):
-    numero: int
-    capacidad: int
-
-class MesaOut(BaseModel):
-    id: int
-    numero: int
-    capacidad: int
-    estado: str  # "disponible", "ocupada", "reservada"
-    pedido_activo_id: Optional[int] = None
-
-    class Config:
-        from_attributes = True
 
 def get_estado_mesa(db: Session, mesa_id: int):
     estados_activos = db.query(OrderStatus).filter(
@@ -126,13 +113,19 @@ def delete_mesa(
     estado, pedido_id = get_estado_mesa(db, mesa.id)
     if estado != "disponible":
         raise HTTPException(
-            400, 
+            400,
             f"No se puede eliminar la mesa porque está {estado}. "
             f"Primero debe cerrar el pedido #{pedido_id}."
         )
-    
-    db.delete(mesa)
-    db.commit()
+    try:
+        db.delete(mesa)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede eliminar la mesa porque tiene pedidos históricos asociados."
+        )
     
 @router.patch("/{mesa_id}/ocupar")
 def ocupar_mesa(
@@ -238,7 +231,6 @@ def reservar_mesa(
     db.refresh(pedido)
 
     return {"message": "Mesa reservada correctamente", "pedido_id": pedido.id}
-
 
 @router.patch("/{mesa_id}/cancelar-reserva")
 def cancelar_reserva(

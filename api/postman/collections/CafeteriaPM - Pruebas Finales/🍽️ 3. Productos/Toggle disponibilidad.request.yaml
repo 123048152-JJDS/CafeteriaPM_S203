@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/productos/1/toggle"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+order: 5000

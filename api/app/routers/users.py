@@ -1,3 +1,5 @@
+from sqlite3 import IntegrityError
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -110,8 +112,8 @@ def update_user(
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
-    user_id:      int,
-    db:           Session = Depends(get_db),
+    user_id: int,
+    db: Session = Depends(get_db),
     current_user=Depends(require_roles("admin"))
 ):
     user = db.query(User).filter(User.id == user_id).first()
@@ -119,6 +121,12 @@ def delete_user(
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     if user.id == current_user.id:
         raise HTTPException(status_code=400, detail="No puedes eliminarte a ti mismo")
-
-    db.delete(user)
-    db.commit()
+    try:
+        db.delete(user)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede eliminar el usuario porque tiene pedidos, ventas o gastos asociados."
+        )

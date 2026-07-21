@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{base_url}}/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "email": "admin@cafe.com",
+        "password": "Admin123!"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const jsonData = pm.response.json();
+      pm.environment.set("token", jsonData.access_token);
+      pm.test("Login exitoso", function() {
+          pm.response.to.have.status(200);
+          pm.expect(jsonData.rol).to.eql("admin");
+      });
+    language: text/javascript
+order: 1000
