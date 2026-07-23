@@ -1,13 +1,12 @@
 import React from 'react'
-import { View, Text, StyleSheet, SafeAreaView, FlatList, Pressable, Button } from 'react-native'
-import CajaNavbar from '../components/CajaNavbar'
+import { View, Text, StyleSheet, SafeAreaView, FlatList, Pressable } from 'react-native'
 
 const PEDIDOS = [
   { id: '039', mesa: 'Mesa 01', estado: 'Listo', productos: '2 Café · 1 Sandwich' },
   { id: '040', mesa: 'Mesa 05', estado: 'Cocina', productos: '3 Capuchino · 2 Pay' },
 ]
 
-export default function CajaPedidosActivosScreen({ setScreen }) {
+export default function CajaPedidosActivosScreen({ onVerDetalle }) {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.titulo}>Pedidos activos</Text>
@@ -22,14 +21,12 @@ export default function CajaPedidosActivosScreen({ setScreen }) {
               {item.estado}
             </Text>
             <Text style={styles.productos}>{item.productos}</Text>
-            <Pressable style={styles.boton}>
+            <Pressable style={styles.boton} onPress={() => onVerDetalle(item.id)}>
               <Text style={styles.botonTexto}>Detalle</Text>
             </Pressable>
           </View>
         )}
       />
-      <CajaNavbar activo="pedidos" />
-      <Button title="← Regresar al menú" onPress={() => setScreen('menu')} />
     </SafeAreaView>
   )
 }
