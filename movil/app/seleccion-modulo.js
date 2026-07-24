@@ -1,15 +1,17 @@
 import { useRouter } from "expo-router";
 import SeleccionModuloScreen from "../src/screens/SeleccionModuloScreen";
 
+const RUTA_POR_MODULO = {
+  mesero: "/mesas",
+  caja: "/pedidos",
+  cocina: "/cola",
+};
+
 export default function SeleccionModulo() {
   const router = useRouter();
   return (
     <SeleccionModuloScreen
-      onSeleccionar={(modulo) => {
-        // Los grupos (mesero)/(caja)/(cocina) los creamos en los Pasos 4-6.
-        // Por ahora esto navegará a una ruta que todavía no existe — es esperado.
-        router.replace(`/(${modulo})`);
-      }}
+      onSeleccionar={(modulo) => router.replace(RUTA_POR_MODULO[modulo])}
     />
   );
 }
