@@ -1,6 +1,5 @@
 import React from 'react'
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Button } from 'react-native'
-import CajaNavbar from '../components/CajaNavbar'
+import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native'
 
 const KPIS = [
   { label: 'Ventas', valor: '$3,420' },
@@ -9,7 +8,7 @@ const KPIS = [
   { label: 'Pedidos', valor: '18' },
 ]
 
-export default function CajaBalanceScreen({ setScreen }) {
+export default function CajaBalanceScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.titulo}>Balance 26 May</Text>
@@ -26,8 +25,6 @@ export default function CajaBalanceScreen({ setScreen }) {
           <Text style={styles.graficaTexto}>📊 Gráfica ventas por hora</Text>
         </View>
       </ScrollView>
-      <CajaNavbar activo="balance" />
-      <Button title="← Regresar al menú" onPress={() => setScreen('menu')} />
     </SafeAreaView>
   )
 }

@@ -1,6 +1,5 @@
 import React from 'react'
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Button } from 'react-native'
-import MeseroNavbar from '../components/MeseroNavbar'
+import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native'
 import TablaDetalle from '../components/TablaDetalle'
 
 const COLUMNAS = [
@@ -16,7 +15,7 @@ const ITEMS = [
 
 const ESTADOS = ['Enviado', 'Preparando', 'Listo']
 
-export default function MeseroPedidoEstadoScreen({ setScreen }) {
+export default function MeseroPedidoEstadoScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.titulo}>Estado pedido</Text>
@@ -37,8 +36,6 @@ export default function MeseroPedidoEstadoScreen({ setScreen }) {
         </View>
         <TablaDetalle columnas={COLUMNAS} datos={ITEMS} />
       </ScrollView>
-      <MeseroNavbar activo="pedidos" />
-      <Button title="← Regresar al menú" onPress={() => setScreen('menu')} />
     </SafeAreaView>
   )
 }
@@ -47,17 +44,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#ffffff' },
   titulo: { fontSize: 22, fontWeight: 'bold', color: '#1F3864', padding: 20 },
   content: { padding: 16, gap: 16 },
-  infoBox: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    backgroundColor: '#f5f5f5', borderRadius: 10, padding: 14,
-  },
+  infoBox: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#f5f5f5', borderRadius: 10, padding: 14 },
   infoTexto: { fontSize: 15, fontWeight: 'bold', color: '#1F3864' },
   indicador: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 8 },
   indicadorItem: { alignItems: 'center', gap: 6 },
-  circulo: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: '#dddddd', alignItems: 'center', justifyContent: 'center',
-  },
+  circulo: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#dddddd', alignItems: 'center', justifyContent: 'center' },
   circuloActivo: { backgroundColor: '#1F3864' },
   circuloTexto: { color: '#ffffff', fontWeight: 'bold' },
   indicadorLabel: { fontSize: 11, color: '#888888' },
