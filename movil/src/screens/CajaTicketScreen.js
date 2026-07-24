@@ -1,8 +1,7 @@
 import React from 'react'
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Pressable, Button } from 'react-native'
-import CajaNavbar from '../components/CajaNavbar'
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Pressable } from 'react-native'
 
-export default function CajaTicketScreen({ setScreen }) {
+export default function CajaTicketScreen({ onIrAPedidos }) {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.titulo}>Ticket #039</Text>
@@ -26,12 +25,10 @@ export default function CajaTicketScreen({ setScreen }) {
         <Pressable style={styles.botonBlanco}>
           <Text style={styles.botonBlancoTexto}>Compartir</Text>
         </Pressable>
-        <Pressable style={styles.botonAzul}>
+        <Pressable style={styles.botonAzul} onPress={onIrAPedidos}>
           <Text style={styles.botonTexto}>Ir a Pedidos</Text>
         </Pressable>
       </ScrollView>
-      <CajaNavbar activo="pedidos" />
-      <Button title="← Regresar al menú" onPress={() => setScreen('menu')} />
     </SafeAreaView>
   )
 }
@@ -46,10 +43,7 @@ const styles = StyleSheet.create({
   fila: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
   filaTexto: { fontSize: 16, color: '#333333' },
   total: { fontSize: 22, fontWeight: 'bold', color: '#1B2A41' },
-  botonBlanco: {
-    width: '100%', backgroundColor: '#ffffff', padding: 15,
-    borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: '#DDE5EE',
-  },
+  botonBlanco: { width: '100%', backgroundColor: '#ffffff', padding: 15, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: '#DDE5EE' },
   botonAzul: { width: '100%', backgroundColor: '#314A7E', padding: 15, borderRadius: 10, alignItems: 'center' },
   botonTexto: { color: '#ffffff', fontSize: 16 },
   botonBlancoTexto: { color: '#314A7E', fontSize: 16 },

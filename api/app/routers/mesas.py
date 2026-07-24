@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlite3 import IntegrityError
+from sqlalchemy.exc import IntegrityError
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session

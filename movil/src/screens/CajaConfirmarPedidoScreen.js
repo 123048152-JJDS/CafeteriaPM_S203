@@ -1,6 +1,5 @@
 import React from 'react'
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Pressable, Button } from 'react-native'
-import CajaNavbar from '../components/CajaNavbar'
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Pressable } from 'react-native'
 import TablaDetalle from '../components/TablaDetalle'
 
 const COLUMNAS = [
@@ -15,7 +14,7 @@ const PRODUCTOS = [
   { cantidad: '1', nombre: 'Sandwich', precio: '$85', status: 'Listo' },
 ]
 
-export default function CajaConfirmarPedidoScreen({ setScreen }) {
+export default function CajaConfirmarPedidoScreen({ onModificar, onConfirmarCobro }) {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.titulo}>Confirmar · Mesa 01</Text>
@@ -28,15 +27,13 @@ export default function CajaConfirmarPedidoScreen({ setScreen }) {
           <Text style={styles.totalLabel}>Total</Text>
           <Text style={styles.totalMonto}>$155.00</Text>
         </View>
-        <Pressable style={styles.botonBlanco}>
+        <Pressable style={styles.botonBlanco} onPress={onModificar}>
           <Text style={styles.botonBlancoTexto}>Modificar</Text>
         </Pressable>
-        <Pressable style={styles.botonAzul}>
+        <Pressable style={styles.botonAzul} onPress={onConfirmarCobro}>
           <Text style={styles.botonTexto}>Confirmar cobro</Text>
         </Pressable>
       </ScrollView>
-      <CajaNavbar activo="pedidos" />
-      <Button title="← Regresar al menú" onPress={() => setScreen('menu')} />
     </SafeAreaView>
   )
 }
@@ -51,10 +48,7 @@ const styles = StyleSheet.create({
   totalLabel: { fontSize: 18, color: '#555555' },
   totalMonto: { fontSize: 22, fontWeight: 'bold', color: '#1B2A41' },
   botonAzul: { backgroundColor: '#314A7E', padding: 15, borderRadius: 10, alignItems: 'center' },
-  botonBlanco: {
-    backgroundColor: '#ffffff', padding: 15, borderRadius: 10,
-    alignItems: 'center', borderWidth: 1, borderColor: '#DDE5EE',
-  },
+  botonBlanco: { backgroundColor: '#ffffff', padding: 15, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: '#DDE5EE' },
   botonTexto: { color: '#ffffff', fontSize: 16 },
   botonBlancoTexto: { color: '#314A7E', fontSize: 16 },
 })

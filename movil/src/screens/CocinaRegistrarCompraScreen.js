@@ -1,32 +1,32 @@
-import React from 'react'
-import { View, Text, StyleSheet, Pressable, ScrollView, SafeAreaView, TextInput, Button } from 'react-native'
-import CocinaNavbar from '../components/CocinaNavbar'
+import React, { useState } from 'react'
+import { View, Text, StyleSheet, Pressable, ScrollView, SafeAreaView, TextInput } from 'react-native'
 
-export default function CocinaRegistrarCompraScreen({ setScreen }) {
+const CAMPOS = ['Producto', 'Cantidad', 'Unidad', 'Proveedor', 'Costo']
+
+export default function CocinaRegistrarCompraScreen({ onGuardar }) {
+  const [valores, setValores] = useState({})
+  const setCampo = (campo, valor) => setValores(v => ({ ...v, [campo]: valor }))
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.titulo}>Registrar Compra</Text>
-
-        {['Producto', 'Cantidad', 'Unidad', 'Proveedor', 'Costo'].map((label, i) => (
+        {CAMPOS.map((label, i) => (
           <View key={i}>
             <Text style={styles.label}>{label}</Text>
             <TextInput
               style={styles.input}
               placeholder={label}
+              value={valores[label] || ''}
+              onChangeText={(t) => setCampo(label, t)}
               keyboardType={['Cantidad', 'Costo'].includes(label) ? 'numeric' : 'default'}
             />
           </View>
         ))}
-
-        <Pressable style={styles.boton}>
+        <Pressable style={styles.boton} onPress={onGuardar}>
           <Text style={styles.botonTexto}>Registrar compra</Text>
         </Pressable>
-
-        <Button title="← Regresar al menú" onPress={() => setScreen('menu')} />
       </ScrollView>
-
-      <CocinaNavbar activo="inventario" setScreen={setScreen} />
     </SafeAreaView>
   )
 }

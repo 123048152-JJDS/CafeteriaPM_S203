@@ -1,8 +1,8 @@
 import React from 'react'
-import { View, Text, StyleSheet, SafeAreaView, Image, Button } from 'react-native'
+import { View, Text, StyleSheet, SafeAreaView, Image } from 'react-native'
 import BotonPrimario from '../components/BotonPrimario'
 
-export default function WelcomeScreen({ setScreen }) {
+export default function WelcomeScreen({ onIniciarSesion }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -13,11 +13,9 @@ export default function WelcomeScreen({ setScreen }) {
         />
         <Text style={styles.title}>CafeteriaPM</Text>
         <Text style={styles.subtitle}>Gestión inteligente para tu negocio</Text>
-        <BotonPrimario titulo="Iniciar sesión" />
+        <BotonPrimario titulo="Iniciar sesión" onPress={onIniciarSesion} />
       </View>
       <Text style={styles.footerText}>Welcome / Info app</Text>
-
-      <Button title="← Regresar al menú" onPress={() => setScreen('menu')} />
     </SafeAreaView>
   )
 }

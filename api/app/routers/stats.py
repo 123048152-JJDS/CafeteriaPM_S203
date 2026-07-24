@@ -691,9 +691,9 @@ def reporte_gastos_xlsx(
     buffer = io.BytesIO()
     wb.save(buffer)
     buffer.seek(0)
-    return Response(buffer.getvalue(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers={
-        "Content-Disposition": "attachment; filename=reporte_gastos.xlsx"
-    })
+    return Response(buffer.getvalue(), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers={
+    "Content-Disposition": "attachment; filename=reporte_gastos.xlsx"
+})
 
 # ============================================================
 # REPORTE DE PRODUCTOS (PDF)
@@ -1231,6 +1231,6 @@ def reporte_historial_xlsx(
     buffer = io.BytesIO()
     wb.save(buffer)
     buffer.seek(0)
-    return Response(buffer.getvalue(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers={
+    return Response(buffer.getvalue(), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers={
         "Content-Disposition": "attachment; filename=reporte_historial.xlsx"
     })

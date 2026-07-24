@@ -1,17 +1,15 @@
 import React, { useState } from 'react'
-import { View, Text, StyleSheet, Pressable, ScrollView, SafeAreaView, TextInput, Button } from 'react-native'
-import CocinaNavbar from '../components/CocinaNavbar'
+import { View, Text, StyleSheet, Pressable, ScrollView, SafeAreaView, TextInput } from 'react-native'
 import ProductCard from '../components/ProductCard'
 
 const productos = [
   { id: 1, nombre: 'Café Americano', categoria: 'Bebidas', precio: 45 },
   { id: 2, nombre: 'Sandwich', categoria: 'Comida', precio: 65 },
-  { id: 3, nombre: 'Pay de Queso', categoria: 'Postre', precio: 55 },
+  { id: 3, nombre: 'Pay de Queso', categoria: 'Postres', precio: 55 },
 ]
 
-export default function CocinaMenuScreen({ setScreen }) {
+export default function CocinaMenuScreen({ onNuevoProducto }) {
   const [categoriaActiva, setCategoriaActiva] = useState('Todo')
-
   const categorias = ['Todo', 'Bebidas', 'Comida', 'Postres']
   const filtrados = categoriaActiva === 'Todo' ? productos : productos.filter(p => p.categoria === categoriaActiva)
 
@@ -19,14 +17,12 @@ export default function CocinaMenuScreen({ setScreen }) {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.titulo}>Menú</Text>
-
         <View style={styles.barraSuperior}>
           <TextInput placeholder="Buscar producto..." style={styles.buscador} />
-          <Pressable style={styles.botonNuevo}>
+          <Pressable style={styles.botonNuevo} onPress={onNuevoProducto}>
             <Text style={styles.botonNuevoTexto}>Nuevo</Text>
           </Pressable>
         </View>
-
         <View style={styles.categorias}>
           {categorias.map(cat => (
             <Pressable
@@ -38,15 +34,10 @@ export default function CocinaMenuScreen({ setScreen }) {
             </Pressable>
           ))}
         </View>
-
         {filtrados.map(p => (
           <ProductCard key={p.id} nombre={p.nombre} categoria={p.categoria} precio={p.precio} />
         ))}
-
-        <Button title="← Regresar al menú" onPress={() => setScreen('menu')} />
       </ScrollView>
-
-      <CocinaNavbar activo="menu" setScreen={setScreen} />
     </SafeAreaView>
   )
 }

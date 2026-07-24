@@ -875,4 +875,4 @@ def cancelar_reserva(mesa_id):
     return redirect(url_for('mesas'))
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000, host="0.0.0.0")
+    app.run(debug=True, port=5050, host="0.0.0.0")

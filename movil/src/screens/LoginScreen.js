@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import {
   View, Text, StyleSheet, SafeAreaView,
-  TextInput, KeyboardAvoidingView, Platform, Button
+  TextInput, KeyboardAvoidingView, Platform
 } from 'react-native'
 import BotonPrimario from '../components/BotonPrimario'
 
-export default function LoginScreen({ setScreen }) {
+export default function LoginScreen({ onLogin }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
@@ -33,10 +33,10 @@ export default function LoginScreen({ setScreen }) {
           onChangeText={setPassword}
           secureTextEntry
         />
-        <BotonPrimario titulo="Iniciar sesión" />
+        {/* onLogin por ahora solo navega; en el Paso 8 lo conectamos a POST /auth/login */}
+        <BotonPrimario titulo="Iniciar sesión" onPress={() => onLogin({ email, password })} />
         <Text style={styles.footerText}>Rol: Mesero / Caja / Cocina</Text>
       </KeyboardAvoidingView>
-      <Button title="← Regresar al menú" onPress={() => setScreen('menu')} />
     </SafeAreaView>
   )
 }
