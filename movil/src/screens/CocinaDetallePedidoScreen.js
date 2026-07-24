@@ -1,18 +1,18 @@
 import React from 'react'
-import { View, Text, StyleSheet, Pressable, ScrollView, SafeAreaView, Button } from 'react-native'
-import CocinaNavbar from '../components/CocinaNavbar'
+import { View, Text, StyleSheet, Pressable, ScrollView, SafeAreaView } from 'react-native'
+import { useLocalSearchParams } from 'expo-router'
 
-export default function CocinaDetallePedidoScreen({ setScreen }) {
+export default function CocinaDetallePedidoScreen({ onMarcarListo }) {
+  const { pedido } = useLocalSearchParams()
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.titulo}>Detalle del Pedido</Text>
-
         <View style={styles.card}>
           <Text style={styles.mesa}>Mesa 03</Text>
-          <Text style={styles.numero}>Pedido #041</Text>
+          <Text style={styles.numero}>Pedido {pedido ?? ''}</Text>
         </View>
-
         <View style={styles.fila}>
           <Text style={styles.filaTexto}>Café Americano</Text>
           <Text style={styles.filaTexto}>x2</Text>
@@ -21,23 +21,17 @@ export default function CocinaDetallePedidoScreen({ setScreen }) {
           <Text style={styles.filaTexto}>Sandwich</Text>
           <Text style={styles.filaTexto}>x1</Text>
         </View>
-
         <Text style={styles.subtitulo}>Notas</Text>
         <View style={styles.notas}>
           <Text>Sin azúcar y pan integral.</Text>
         </View>
-
         <Pressable style={styles.botonPreparacion}>
           <Text style={styles.botonTexto}>En preparación</Text>
         </Pressable>
-        <Pressable style={styles.botonListo}>
+        <Pressable style={styles.botonListo} onPress={onMarcarListo}>
           <Text style={styles.botonTexto}>Marcar como listo</Text>
         </Pressable>
-
-        <Button title="← Regresar al menú" onPress={() => setScreen('menu')} />
       </ScrollView>
-
-      <CocinaNavbar activo="cola" setScreen={setScreen} />
     </SafeAreaView>
   )
 }

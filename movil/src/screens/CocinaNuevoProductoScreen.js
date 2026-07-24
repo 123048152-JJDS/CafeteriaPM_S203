@@ -1,44 +1,42 @@
 import React, { useState } from 'react'
-import { View, Text, StyleSheet, Pressable, ScrollView, SafeAreaView, TextInput, Switch, Button } from 'react-native'
-import CocinaNavbar from '../components/CocinaNavbar'
+import { View, Text, StyleSheet, Pressable, ScrollView, SafeAreaView, TextInput, Switch } from 'react-native'
 
-export default function CocinaNuevoProductoScreen({ setScreen }) {
+const CAMPOS = [
+  { label: 'Nombre', placeholder: 'Capuchino' },
+  { label: 'Precio ($)', placeholder: '65', numeric: true },
+  { label: 'Categoría', placeholder: 'Bebidas' },
+  { label: 'Ingredientes', placeholder: 'Café, Leche' },
+]
+
+export default function CocinaNuevoProductoScreen({ onGuardar }) {
   const [disponible, setDisponible] = useState(true)
+  const [valores, setValores] = useState({})
+  const setCampo = (campo, valor) => setValores(v => ({ ...v, [campo]: valor }))
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.titulo}>Nuevo producto</Text>
-
-        {[
-          { label: 'Nombre', placeholder: 'Capuchino' },
-          { label: 'Precio ($)', placeholder: '65', numeric: true },
-          { label: 'Categoría', placeholder: 'Bebidas' },
-          { label: 'Ingredientes', placeholder: 'Café, Leche' },
-        ].map((field, i) => (
+        {CAMPOS.map((field, i) => (
           <View key={i}>
             <Text style={styles.label}>{field.label}</Text>
             <TextInput
               style={styles.input}
               placeholder={field.placeholder}
+              value={valores[field.label] || ''}
+              onChangeText={(t) => setCampo(field.label, t)}
               keyboardType={field.numeric ? 'numeric' : 'default'}
             />
           </View>
         ))}
-
         <View style={styles.switchContainer}>
           <Switch value={disponible} onValueChange={setDisponible} />
           <Text style={styles.switchTexto}>Disponible en menú</Text>
         </View>
-
-        <Pressable style={styles.boton}>
+        <Pressable style={styles.boton} onPress={onGuardar}>
           <Text style={styles.botonTexto}>Guardar producto</Text>
         </Pressable>
-
-        <Button title="← Regresar al menú" onPress={() => setScreen('menu')} />
       </ScrollView>
-
-      <CocinaNavbar activo="menu" setScreen={setScreen} />
     </SafeAreaView>
   )
 }

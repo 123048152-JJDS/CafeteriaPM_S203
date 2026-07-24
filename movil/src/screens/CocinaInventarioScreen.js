@@ -1,6 +1,5 @@
 import React from 'react'
-import { View, Text, StyleSheet, Pressable, ScrollView, SafeAreaView, Button } from 'react-native'
-import CocinaNavbar from '../components/CocinaNavbar'
+import { View, Text, StyleSheet, Pressable, ScrollView, SafeAreaView } from 'react-native'
 
 const inventario = [
   { producto: 'Leche', unidad: 'L', stock: '0.8' },
@@ -8,23 +7,20 @@ const inventario = [
   { producto: 'Café', unidad: 'kg', stock: '2.4' },
 ]
 
-export default function CocinaInventarioScreen({ setScreen }) {
+export default function CocinaInventarioScreen({ onRegistrarCompra }) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.titulo}>Inventario</Text>
-
         <View style={styles.alerta}>
           <Text style={styles.alertaTexto}>⚠ Stock crítico</Text>
           <Text style={styles.alertaTexto}>Leche, Harina</Text>
         </View>
-
         <View style={styles.encabezado}>
           <Text style={styles.enc}>Producto</Text>
           <Text style={styles.enc}>Unidad</Text>
           <Text style={styles.enc}>Stock</Text>
         </View>
-
         {inventario.map((item, index) => (
           <View key={index} style={styles.fila}>
             <Text style={styles.txt}>{item.producto}</Text>
@@ -32,15 +28,10 @@ export default function CocinaInventarioScreen({ setScreen }) {
             <Text style={[styles.txt, Number(item.stock) < 1 && styles.rojo]}>{item.stock}</Text>
           </View>
         ))}
-
-        <Pressable style={styles.boton}>
+        <Pressable style={styles.boton} onPress={onRegistrarCompra}>
           <Text style={styles.botonTexto}>Registrar compra</Text>
         </Pressable>
-
-        <Button title="← Regresar al menú" onPress={() => setScreen('menu')} />
       </ScrollView>
-
-      <CocinaNavbar activo="inventario" setScreen={setScreen} />
     </SafeAreaView>
   )
 }
