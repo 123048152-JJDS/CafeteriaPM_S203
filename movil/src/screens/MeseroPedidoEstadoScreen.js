@@ -1,5 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native'
+import { useLocalSearchParams } from 'expo-router'
 import TablaDetalle from '../components/TablaDetalle'
 
 const COLUMNAS = [
@@ -16,13 +17,15 @@ const ITEMS = [
 const ESTADOS = ['Enviado', 'Preparando', 'Listo']
 
 export default function MeseroPedidoEstadoScreen() {
+  const { pedidoId } = useLocalSearchParams()
+
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.titulo}>Estado pedido</Text>
+      <Text style={styles.titulo}>Estado pedido {pedidoId ? `#${pedidoId}` : ''}</Text>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.infoBox}>
           <Text style={styles.infoTexto}>Mesa 02</Text>
-          <Text style={styles.infoTexto}>Pedido #043</Text>
+          <Text style={styles.infoTexto}>Pedido #{pedidoId ?? '043'}</Text>
         </View>
         <View style={styles.indicador}>
           {ESTADOS.map((e, i) => (

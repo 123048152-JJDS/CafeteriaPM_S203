@@ -1,7 +1,10 @@
 import React from 'react'
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, Pressable } from 'react-native'
+import { useLocalSearchParams } from 'expo-router'
 
 export default function CajaTicketScreen({ onIrAPedidos }) {
+  const { metodo, montoRecibido, cambio, total } = useLocalSearchParams()
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.titulo}>Ticket #039</Text>
@@ -18,7 +21,18 @@ export default function CajaTicketScreen({ onIrAPedidos }) {
           <Text style={styles.filaTexto}>$85</Text>
         </View>
         <View style={styles.linea} />
-        <Text style={styles.total}>Total $155.00</Text>
+        <Text style={styles.total}>Total ${total ?? '155.00'}</Text>
+
+        <View style={styles.pagoInfo}>
+          <Text style={styles.pagoTexto}>Método: {metodo ?? '—'}</Text>
+          {metodo === 'Efectivo' && (
+            <>
+              <Text style={styles.pagoTexto}>Recibido: ${montoRecibido}</Text>
+              <Text style={styles.pagoTextoDestacado}>Cambio: ${cambio}</Text>
+            </>
+          )}
+        </View>
+
         <Pressable style={styles.botonBlanco}>
           <Text style={styles.botonBlancoTexto}>Imprimir</Text>
         </Pressable>
@@ -43,6 +57,9 @@ const styles = StyleSheet.create({
   fila: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
   filaTexto: { fontSize: 16, color: '#333333' },
   total: { fontSize: 22, fontWeight: 'bold', color: '#1B2A41' },
+  pagoInfo: { width: '100%', backgroundColor: '#F3F6FA', borderRadius: 10, padding: 14, gap: 4 },
+  pagoTexto: { fontSize: 14, color: '#555555' },
+  pagoTextoDestacado: { fontSize: 16, fontWeight: 'bold', color: '#2F724E' },
   botonBlanco: { width: '100%', backgroundColor: '#ffffff', padding: 15, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: '#DDE5EE' },
   botonAzul: { width: '100%', backgroundColor: '#314A7E', padding: 15, borderRadius: 10, alignItems: 'center' },
   botonTexto: { color: '#ffffff', fontSize: 16 },

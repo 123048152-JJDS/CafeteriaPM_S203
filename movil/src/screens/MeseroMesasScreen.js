@@ -14,9 +14,15 @@ const MESAS = [
 ]
 
 const COLORES = {
-  libre: { bg: '#e8f5e9', border: '#4caf50', texto: '#2e7d32' },
-  ocupada: { bg: '#ffebee', border: '#ef5350', texto: '#c62828' },
+  libre:     { bg: '#e8f5e9', border: '#4caf50', texto: '#2e7d32' },
+  ocupada:   { bg: '#ffebee', border: '#ef5350', texto: '#c62828' },
   reservada: { bg: '#fff8e1', border: '#ffc107', texto: '#f57f17' },
+}
+
+const ETIQUETA_BOTON = {
+  libre: 'Nuevo pedido',
+  ocupada: 'Ver pedido',
+  reservada: 'Ver reserva',
 }
 
 export default function MeseroMesasScreen({ onSeleccionarMesa }) {
@@ -28,9 +34,9 @@ export default function MeseroMesasScreen({ onSeleccionarMesa }) {
         <Text style={styles.cardCapacidad}>{item.capacidad} p.</Text>
         <Pressable
           style={[styles.cardBoton, { backgroundColor: color.border }]}
-          onPress={() => onSeleccionarMesa(item.id)}
+          onPress={() => onSeleccionarMesa(item.id, item.estado)}
         >
-          <Text style={styles.cardBotonTexto}>Seleccionar</Text>
+          <Text style={styles.cardBotonTexto}>{ETIQUETA_BOTON[item.estado]}</Text>
         </Pressable>
       </View>
     )
@@ -57,6 +63,6 @@ const styles = StyleSheet.create({
   card: { flex: 1, margin: 6, borderRadius: 12, borderWidth: 1.5, padding: 10, alignItems: 'center', gap: 4 },
   cardNumero: { fontSize: 20, fontWeight: 'bold' },
   cardCapacidad: { fontSize: 12, color: '#888888' },
-  cardBoton: { borderRadius: 8, paddingVertical: 4, paddingHorizontal: 8, marginTop: 4 },
-  cardBotonTexto: { color: '#ffffff', fontSize: 10, fontWeight: 'bold' },
+  cardBoton: { borderRadius: 8, paddingVertical: 4, paddingHorizontal: 6, marginTop: 4 },
+  cardBotonTexto: { color: '#ffffff', fontSize: 9, fontWeight: 'bold' },
 })

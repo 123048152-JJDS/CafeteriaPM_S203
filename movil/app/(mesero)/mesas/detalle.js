@@ -5,8 +5,8 @@ export default function Detalle() {
   const router = useRouter();
   return (
     <MeseroDetalleMesaScreen
-      onAgregarPedido={() => router.push("/mesas/catalogo")}
-      onLiberar={() => router.back()}
+      onAgregarPedido={(mesaId) => router.push(`/mesas/catalogo?mesaId=${mesaId}`)}
+      onLiberar={() => router.replace("/mesas")}
     />
   );
 }

@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import MeseroPerfilScreen from "../../src/screens/MeseroPerfilScreen";
+import CocinaPerfilScreen from "../../src/screens/CocinaPerfilScreen";
 
 export default function Perfil() {
   const router = useRouter();
@@ -9,5 +9,5 @@ export default function Perfil() {
     router.replace("/welcome");
   };
 
-  return <MeseroPerfilScreen onLogout={handleLogout} />;
+  return <CocinaPerfilScreen onLogout={handleLogout} />;
 }

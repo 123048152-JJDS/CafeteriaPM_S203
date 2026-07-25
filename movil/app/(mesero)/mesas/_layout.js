@@ -1,5 +1,10 @@
 import { Stack } from "expo-router";
+import { PedidoEnCursoProvider } from "../../../src/context/PedidoEnCursoContext";
 
 export default function MesasStackLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <PedidoEnCursoProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </PedidoEnCursoProvider>
+  );
 }

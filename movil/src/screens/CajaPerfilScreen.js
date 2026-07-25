@@ -2,10 +2,10 @@ import React, { useState } from 'react'
 import { View, Text, StyleSheet, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
 import BotonPrimario from '../components/BotonPrimario'
 
-export default function MeseroPerfilScreen({ onLogout }) {
-  const [nombre, setNombre] = useState('Ana García')
-  const [usuario, setUsuario] = useState('ana.garcia')
-  const [email, setEmail] = useState('ana@cafe.com')
+export default function CajaPerfilScreen({ onLogout }) {
+  const [nombre, setNombre] = useState('Juan Fernández')
+  const [usuario, setUsuario] = useState('juan.fernandez')
+  const [email, setEmail] = useState('juan@cafe.com')
 
   return (
     <SafeAreaView style={styles.container}>
@@ -15,7 +15,7 @@ export default function MeseroPerfilScreen({ onLogout }) {
           <Text style={styles.label}>Nombre</Text>
           <TextInput style={styles.input} value={nombre} onChangeText={setNombre} />
           <Text style={styles.label}>ID Empleado</Text>
-          <TextInput style={styles.input} value="MES-001" editable={false} />
+          <TextInput style={styles.input} value="CAJ-001" editable={false} />
           <Text style={styles.label}>Usuario</Text>
           <TextInput style={styles.input} value={usuario} onChangeText={setUsuario} />
           <Text style={styles.label}>Email</Text>
@@ -36,8 +36,12 @@ export default function MeseroPerfilScreen({ onLogout }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#ffffff' },
-  titulo: { fontSize: 22, fontWeight: 'bold', color: '#1F3864', padding: 20 },
+  titulo: { fontSize: 22, fontWeight: 'bold', color: '#1B2A41', padding: 20 },
   content: { paddingHorizontal: 24, gap: 8, paddingBottom: 24 },
-  label: { fontSize: 14, color: '#555555' },
-  input: { borderWidth: 1, borderColor: '#dddddd', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 16, fontSize: 15, marginBottom: 8 },
+  label: { fontSize: 14, color: '#5C6F88', marginTop: 8 },
+  input: {
+    borderWidth: 1, borderColor: '#DDE5EE',
+    borderRadius: 10, paddingVertical: 12,
+    paddingHorizontal: 16, fontSize: 15, marginBottom: 8,
+  },
 })

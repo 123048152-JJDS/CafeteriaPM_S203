@@ -8,7 +8,7 @@ const productos = [
   { id: 3, nombre: 'Pay de Queso', categoria: 'Postres', precio: 55 },
 ]
 
-export default function CocinaMenuScreen({ onNuevoProducto }) {
+export default function CocinaMenuScreen({ onNuevoProducto, onEditarProducto }) {
   const [categoriaActiva, setCategoriaActiva] = useState('Todo')
   const categorias = ['Todo', 'Bebidas', 'Comida', 'Postres']
   const filtrados = categoriaActiva === 'Todo' ? productos : productos.filter(p => p.categoria === categoriaActiva)
@@ -35,7 +35,14 @@ export default function CocinaMenuScreen({ onNuevoProducto }) {
           ))}
         </View>
         {filtrados.map(p => (
-          <ProductCard key={p.id} nombre={p.nombre} categoria={p.categoria} precio={p.precio} />
+          <ProductCard
+            key={p.id}
+            id={p.id}
+            nombre={p.nombre}
+            categoria={p.categoria}
+            precio={p.precio}
+            onEditar={onEditarProducto}
+          />
         ))}
       </ScrollView>
     </SafeAreaView>

@@ -1,10 +1,9 @@
 import React from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 
-export default function ProductCard({ nombre, categoria, precio }) {
+export default function ProductCard({ id, nombre, categoria, precio, onEditar }) {
   return (
     <View style={styles.card}>
-
       <View style={styles.imagen}></View>
 
       <View style={styles.info}>
@@ -13,10 +12,12 @@ export default function ProductCard({ nombre, categoria, precio }) {
         <Text style={styles.precio}>${precio}</Text>
       </View>
 
-      <Pressable style={styles.boton}>
+      <Pressable
+        style={styles.boton}
+        onPress={() => onEditar && onEditar({ id, nombre, categoria, precio })}
+      >
         <Text style={styles.textoBoton}>Editar</Text>
       </Pressable>
-
     </View>
   );
 }

@@ -2,10 +2,10 @@ import React, { useState } from 'react'
 import { View, Text, StyleSheet, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
 import BotonPrimario from '../components/BotonPrimario'
 
-export default function MeseroPerfilScreen({ onLogout }) {
-  const [nombre, setNombre] = useState('Ana García')
-  const [usuario, setUsuario] = useState('ana.garcia')
-  const [email, setEmail] = useState('ana@cafe.com')
+export default function CocinaPerfilScreen({ onLogout }) {
+  const [nombre, setNombre] = useState('Carlos Sánchez')
+  const [usuario, setUsuario] = useState('carlos.sanchez')
+  const [email, setEmail] = useState('carlos@cafe.com')
 
   return (
     <SafeAreaView style={styles.container}>
@@ -15,7 +15,7 @@ export default function MeseroPerfilScreen({ onLogout }) {
           <Text style={styles.label}>Nombre</Text>
           <TextInput style={styles.input} value={nombre} onChangeText={setNombre} />
           <Text style={styles.label}>ID Empleado</Text>
-          <TextInput style={styles.input} value="MES-001" editable={false} />
+          <TextInput style={styles.input} value="COC-001" editable={false} />
           <Text style={styles.label}>Usuario</Text>
           <TextInput style={styles.input} value={usuario} onChangeText={setUsuario} />
           <Text style={styles.label}>Email</Text>
@@ -38,6 +38,10 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#ffffff' },
   titulo: { fontSize: 22, fontWeight: 'bold', color: '#1F3864', padding: 20 },
   content: { paddingHorizontal: 24, gap: 8, paddingBottom: 24 },
-  label: { fontSize: 14, color: '#555555' },
-  input: { borderWidth: 1, borderColor: '#dddddd', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 16, fontSize: 15, marginBottom: 8 },
+  label: { fontSize: 14, color: '#666666', marginTop: 8 },
+  input: {
+    borderWidth: 1, borderColor: '#dddddd',
+    borderRadius: 10, paddingVertical: 12,
+    paddingHorizontal: 16, fontSize: 15, marginBottom: 8,
+  },
 })
