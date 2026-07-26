@@ -1,13 +1,27 @@
 import React, { useState } from 'react'
 import {
   View, Text, StyleSheet, SafeAreaView,
-  TextInput, KeyboardAvoidingView, Platform
+  TextInput, KeyboardAvoidingView, Platform, ActivityIndicator
 } from 'react-native'
 import BotonPrimario from '../components/BotonPrimario'
 
 export default function LoginScreen({ onLogin }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState(null)
+  const [cargando, setCargando] = useState(false)
+
+  const handlePress = async () => {
+    setError(null)
+    setCargando(true)
+    try {
+      await onLogin(email, password)
+    } catch (e) {
+      setError(e.message || 'No se pudo iniciar sesión')
+    } finally {
+      setCargando(false)
+    }
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -33,8 +47,12 @@ export default function LoginScreen({ onLogin }) {
           onChangeText={setPassword}
           secureTextEntry
         />
-        {/* onLogin por ahora solo navega; en el Paso 8 lo conectamos a POST /auth/login */}
-        <BotonPrimario titulo="Iniciar sesión" onPress={() => onLogin({ email, password })} />
+        {error && <Text style={styles.errorTexto}>{error}</Text>}
+        {cargando ? (
+          <ActivityIndicator style={{ marginTop: 12 }} color="#1F3864" />
+        ) : (
+          <BotonPrimario titulo="Iniciar sesión" onPress={handlePress} />
+        )}
         <Text style={styles.footerText}>Rol: Mesero / Caja / Cocina</Text>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -42,39 +60,11 @@ export default function LoginScreen({ onLogin }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  inner: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-    gap: 8,
-  },
-  titulo: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1F3864',
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    color: '#555555',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#dddddd',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    fontSize: 15,
-    marginBottom: 8,
-  },
-  footerText: {
-    textAlign: 'center',
-    color: '#aaaaaa',
-    fontSize: 12,
-    marginTop: 8,
-  },
+  container: { flex: 1, backgroundColor: '#ffffff' },
+  inner: { flex: 1, justifyContent: 'center', paddingHorizontal: 32, gap: 8 },
+  titulo: { fontSize: 28, fontWeight: 'bold', color: '#1F3864', marginBottom: 16 },
+  label: { fontSize: 14, color: '#555555' },
+  input: { borderWidth: 1, borderColor: '#dddddd', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 16, fontSize: 15, marginBottom: 8 },
+  errorTexto: { color: '#c62828', fontSize: 13, textAlign: 'center', marginBottom: 8 },
+  footerText: { textAlign: 'center', color: '#aaaaaa', fontSize: 12, marginTop: 8 },
 })

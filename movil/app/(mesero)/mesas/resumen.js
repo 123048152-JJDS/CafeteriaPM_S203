@@ -6,7 +6,7 @@ export default function Resumen() {
   return (
     <MeseroPedidoResumenScreen
       onCancelar={() => router.back()}
-      onEnviarACaja={() => router.push("/pedidos")}
+      onEnviarACaja={() => router.push("/seguimiento")}
     />
   );
 }

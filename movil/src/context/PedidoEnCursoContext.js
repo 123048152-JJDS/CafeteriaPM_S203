@@ -1,9 +1,19 @@
-import React, { createContext, useContext, useMemo, useState } from 'react'
+import React, { createContext, useContext, useMemo, useState, useCallback } from 'react'
 
 const PedidoEnCursoContext = createContext(null)
 
 export function PedidoEnCursoProvider({ children }) {
   const [items, setItems] = useState([]) // [{ id, nombre, precio, cantidad }]
+  const [mesaActivaId, setMesaActivaId] = useState(null)
+
+  const iniciarParaMesa = useCallback((mesaId) => {
+    setMesaActivaId(prev => {
+      if (String(prev) !== String(mesaId)) {
+        setItems([])
+      }
+      return mesaId
+    })
+  }, [])
 
   const agregarProducto = (producto) => {
     setItems(prev => {
@@ -23,7 +33,10 @@ export function PedidoEnCursoProvider({ children }) {
     )
   }
 
-  const limpiar = () => setItems([])
+  const limpiar = () => {
+    setItems([])
+    setMesaActivaId(null)
+  }
 
   const total = useMemo(
     () => items.reduce((sum, i) => sum + i.precio * i.cantidad, 0),
@@ -37,7 +50,16 @@ export function PedidoEnCursoProvider({ children }) {
 
   return (
     <PedidoEnCursoContext.Provider
-      value={{ items, agregarProducto, cambiarCantidad, limpiar, total, cantidadTotal }}
+      value={{
+        items,
+        agregarProducto,
+        cambiarCantidad,
+        limpiar,
+        total,
+        cantidadTotal,
+        iniciarParaMesa,
+        mesaActivaId,
+      }}
     >
       {children}
     </PedidoEnCursoContext.Provider>

@@ -5,7 +5,7 @@ export default function Seguimiento() {
   const router = useRouter();
   return (
     <MeseroPedidosScreen
-      onVerDetalle={(pedidoId) => router.push(`/pedidos/detalle?pedidoId=${pedidoId}`)}
+      onVerDetalle={(pedidoId) => router.push(`/seguimiento/detalle?pedidoId=${pedidoId}`)}
     />
   );
 }

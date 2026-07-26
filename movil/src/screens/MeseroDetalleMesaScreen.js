@@ -1,24 +1,43 @@
-import React from 'react'
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native'
-import { useLocalSearchParams } from 'expo-router'
+import React, { useCallback, useState } from 'react'
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Alert, ActivityIndicator } from 'react-native'
+import { useLocalSearchParams, useFocusEffect } from 'expo-router'
 import TablaDetalle from '../components/TablaDetalle'
 import BotonPrimario from '../components/BotonPrimario'
+import { api } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 
 const COLUMNAS = [
   { label: 'Cant', key: 'cantidad', flex: 0.5 },
   { label: 'Producto', key: 'producto', flex: 2 },
   { label: 'Precio', key: 'precio', flex: 1 },
-  { label: 'Estado', key: 'estatus', flex: 1 },
-]
-
-const ITEMS = [
-  { cantidad: 2, producto: 'Café Americano', precio: '$70', estatus: 'Entregado' },
-  { cantidad: 1, producto: 'Sandwich Club', precio: '$85', estatus: 'Preparando' },
 ]
 
 export default function MeseroDetalleMesaScreen({ onAgregarPedido, onLiberar }) {
-  const { mesaId, estado } = useLocalSearchParams()
+  const { mesaId, estado, pedidoId } = useLocalSearchParams()
+  const { auth } = useAuth()
   const esReserva = estado === 'reservada'
+
+  const [pedido, setPedido] = useState(null)
+  const [cargando, setCargando] = useState(true)
+  const [error, setError] = useState(null)
+
+  const cargarPedido = useCallback(async () => {
+    if (!pedidoId) {
+      setCargando(false)
+      return
+    }
+    try {
+      setError(null)
+      const data = await api.get(`/pedidos/${pedidoId}`, auth?.token)
+      setPedido(data)
+    } catch (e) {
+      setError(e.message || 'No se pudo cargar el pedido')
+    } finally {
+      setCargando(false)
+    }
+  }, [pedidoId, auth?.token])
+
+  useFocusEffect(useCallback(() => { cargarPedido() }, [cargarPedido]))
 
   const confirmarLiberar = () => {
     Alert.alert(
@@ -28,10 +47,31 @@ export default function MeseroDetalleMesaScreen({ onAgregarPedido, onLiberar }) 
         : '¿Seguro que quieres cerrar y liberar esta mesa? Esta acción no se puede deshacer.',
       [
         { text: 'No', style: 'cancel' },
-        { text: 'Sí, confirmar', style: 'destructive', onPress: onLiberar },
+        {
+          text: 'Sí, confirmar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              if (esReserva) {
+                await api.patch(`/mesas/${mesaId}/cancelar-reserva`, {}, auth?.token)
+              } else {
+                await api.patch(`/mesas/${mesaId}/liberar`, {}, auth?.token)
+              }
+              onLiberar()
+            } catch (e) {
+              Alert.alert('No se pudo completar la acción', e.message)
+            }
+          },
+        },
       ]
     )
   }
+
+  const items = (pedido?.detalles || []).map(d => ({
+    cantidad: d.cantidad,
+    producto: d.producto?.nombre || `Producto #${d.id_producto}`,
+    precio: `$${Number(d.precio_unitario).toFixed(2)}`,
+  }))
 
   return (
     <SafeAreaView style={styles.container}>
@@ -40,22 +80,36 @@ export default function MeseroDetalleMesaScreen({ onAgregarPedido, onLiberar }) 
         <Text style={styles.estado}>{esReserva ? 'Reservada' : 'Ocupada'}</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content}>
-        {esReserva ? (
+        {cargando ? (
+          <ActivityIndicator color="#1F3864" style={{ marginTop: 20 }} />
+        ) : error ? (
+          <Text style={styles.error}>{error}</Text>
+        ) : esReserva ? (
           <View style={styles.alerta}>
             <Text style={styles.alertaTexto}>📅 Mesa reservada, aún sin pedido</Text>
           </View>
         ) : (
           <>
             <View style={styles.alerta}>
-              <Text style={styles.alertaTexto}>⚠️ Pedido en curso</Text>
+              <Text style={styles.alertaTexto}>
+                ⚠️ Pedido #{pedido?.id} · {pedido?.estado_actual?.nombre || '—'}
+              </Text>
             </View>
-            <TablaDetalle columnas={COLUMNAS} datos={ITEMS} />
+            <TablaDetalle columnas={COLUMNAS} datos={items} />
+            <Text style={styles.total}>Total: ${Number(pedido?.total || 0).toFixed(2)}</Text>
           </>
         )}
-        <Text style={styles.observaciones}>Observaciones: Sin cebolla</Text>
+
         <View style={styles.botones}>
-          {!esReserva && (
-            <BotonPrimario titulo="Agregar pedido" onPress={() => onAgregarPedido(mesaId)} />
+          {/*
+            Fix bug 2: el backend no soporta agregar detalles a un pedido ya
+            creado (solo POST /pedidos/ crea uno nuevo desde cero). Mostrar
+            "Agregar pedido" en una mesa ya ocupada crearía un segundo pedido
+            duplicado para la misma mesa. Por eso solo se ofrece para
+            reservas que todavía no tienen pedido.
+          */}
+          {esReserva && (
+            <BotonPrimario titulo="Agregar pedido" onPress={() => onAgregarPedido(mesaId, pedidoId)} />
           )}
           <BotonPrimario
             titulo={esReserva ? 'Cancelar reserva' : 'Liberar'}
@@ -74,8 +128,9 @@ const styles = StyleSheet.create({
   titulo: { fontSize: 20, fontWeight: 'bold', color: '#1F3864' },
   estado: { fontSize: 13, color: '#ef5350' },
   content: { padding: 16, gap: 16 },
+  error: { color: '#c62828', textAlign: 'center' },
   alerta: { backgroundColor: '#fff8e1', borderRadius: 8, padding: 10, borderLeftWidth: 4, borderLeftColor: '#ffc107' },
   alertaTexto: { color: '#f57f17', fontWeight: 'bold' },
-  observaciones: { fontSize: 13, color: '#888888', fontStyle: 'italic' },
+  total: { fontSize: 16, fontWeight: 'bold', color: '#1F3864', textAlign: 'right' },
   botones: { gap: 8 },
 })

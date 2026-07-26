@@ -1,20 +1,42 @@
 import React, { useState } from 'react'
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TextInput, Pressable } from 'react-native'
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TextInput, Pressable, ActivityIndicator, Alert } from 'react-native'
+import { useLocalSearchParams } from 'expo-router'
 import BotonPrimario from '../components/BotonPrimario'
 import { usePedidoEnCurso } from '../context/PedidoEnCursoContext'
+import { api } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 
 export default function MeseroPedidoResumenScreen({ onCancelar, onEnviarACaja }) {
+  const { mesaId } = useLocalSearchParams()
+  const { auth } = useAuth()
   const { items, cambiarCantidad, total, limpiar } = usePedidoEnCurso()
   const [observaciones, setObservaciones] = useState('')
+  const [enviando, setEnviando] = useState(false)
 
   const handleCancelar = () => {
     limpiar()
     onCancelar()
   }
 
-  const handleEnviar = () => {
-    limpiar()
-    onEnviarACaja()
+  const handleEnviar = async () => {
+    if (items.length === 0) return
+    setEnviando(true)
+    try {
+      await api.post('/pedidos/', {
+        id_mesa: Number(mesaId),
+        detalles: items.map(i => ({
+          id_producto: i.id,
+          cantidad: i.cantidad,
+          observacion: observaciones || undefined,
+        })),
+      }, auth?.token)
+      limpiar()
+      onEnviarACaja()
+    } catch (e) {
+      Alert.alert('No se pudo crear el pedido', e.message)
+    } finally {
+      setEnviando(false)
+    }
   }
 
   return (
@@ -52,12 +74,12 @@ export default function MeseroPedidoResumenScreen({ onCancelar, onEnviarACaja })
         />
         <Text style={styles.total}>Total    ${total.toFixed(2)}</Text>
         <View style={styles.botones}>
-          <BotonPrimario titulo="Cancelar" color="#dddddd" onPress={handleCancelar} />
-          <BotonPrimario
-            titulo="Enviar a caja"
-            onPress={handleEnviar}
-            disabled={items.length === 0}
-          />
+          <BotonPrimario titulo="Cancelar" color="#dddddd" onPress={handleCancelar} disabled={enviando} />
+          {enviando ? (
+            <ActivityIndicator color="#1F3864" />
+          ) : (
+            <BotonPrimario titulo="Enviar a caja" onPress={handleEnviar} disabled={items.length === 0} />
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

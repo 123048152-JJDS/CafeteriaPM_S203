@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { View, Text, StyleSheet, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
 import BotonPrimario from '../components/BotonPrimario'
+import { useAuth } from '../context/AuthContext'
 
 export default function MeseroPerfilScreen({ onLogout }) {
-  const [nombre, setNombre] = useState('Ana García')
-  const [usuario, setUsuario] = useState('ana.garcia')
-  const [email, setEmail] = useState('ana@cafe.com')
+  const { auth } = useAuth()
+  const [nombre, setNombre] = useState(auth?.nombre || '')
 
   return (
     <SafeAreaView style={styles.container}>
@@ -15,17 +15,9 @@ export default function MeseroPerfilScreen({ onLogout }) {
           <Text style={styles.label}>Nombre</Text>
           <TextInput style={styles.input} value={nombre} onChangeText={setNombre} />
           <Text style={styles.label}>ID Empleado</Text>
-          <TextInput style={styles.input} value="MES-001" editable={false} />
-          <Text style={styles.label}>Usuario</Text>
-          <TextInput style={styles.input} value={usuario} onChangeText={setUsuario} />
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
+          <TextInput style={styles.input} value={String(auth?.userId ?? '')} editable={false} />
+          <Text style={styles.label}>Rol</Text>
+          <TextInput style={styles.input} value={auth?.rol ?? ''} editable={false} />
           <BotonPrimario titulo="Guardar cambios" onPress={() => {}} />
           <BotonPrimario titulo="Cerrar sesión" color="#c62828" onPress={onLogout} />
         </ScrollView>

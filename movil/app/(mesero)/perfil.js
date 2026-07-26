@@ -1,11 +1,13 @@
 import { useRouter } from "expo-router";
 import MeseroPerfilScreen from "../../src/screens/MeseroPerfilScreen";
+import { useAuth } from "../../src/context/AuthContext";
 
 export default function Perfil() {
   const router = useRouter();
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    // Paso 8: aquí llamaremos a useAuth().logout() y limpiaremos el token real
+  const handleLogout = async () => {
+    await logout();
     router.replace("/welcome");
   };
 

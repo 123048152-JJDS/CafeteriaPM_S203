@@ -1,15 +1,8 @@
-import React, { useMemo, useState } from 'react'
-import { View, Text, StyleSheet, SafeAreaView, FlatList, Pressable } from 'react-native'
-
-const PEDIDOS = [
-  { id: '041', mesa: 'Mesa 03', estado: 'pendiente',      total: 155.0, fecha: '2026-07-24' },
-  { id: '042', mesa: 'Mesa 05', estado: 'en_preparacion', total: 90.0,  fecha: '2026-07-24' },
-  { id: '043', mesa: 'Mesa 02', estado: 'listo',          total: 210.0, fecha: '2026-07-23' },
-  { id: '044', mesa: 'Mesa 07', estado: 'entregado',      total: 75.0,  fecha: '2026-07-23' },
-  { id: '045', mesa: 'Mesa 01', estado: 'pagado',         total: 130.0, fecha: '2026-07-20' },
-  { id: '046', mesa: 'Mesa 04', estado: 'cancelado',      total: 60.0,  fecha: '2026-07-18' },
-  { id: '047', mesa: 'Mesa 06', estado: 'pagado',         total: 95.0,  fecha: '2026-07-15' },
-]
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { View, Text, StyleSheet, SafeAreaView, FlatList, Pressable, ActivityIndicator, RefreshControl } from 'react-native'
+import { useFocusEffect } from 'expo-router'
+import { api } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 
 const ESTADOS_INFO = {
   pendiente:      { label: 'Pendiente',      color: '#f57f17', bg: '#fff8e1' },
@@ -21,53 +14,87 @@ const ESTADOS_INFO = {
 }
 
 const GRUPOS = {
-  activos:      ['pendiente', 'en_preparacion', 'listo', 'entregado'],
-  pendientes:   ['pendiente'],
-  finalizados:  ['pagado', 'cancelado'],
+  activos:     ['pendiente', 'en_preparacion', 'listo', 'entregado'],
+  pendientes:  ['pendiente'],
+  finalizados: ['pagado', 'cancelado'],
 }
 
-const FILTROS_ESTATUS = ['Todos', 'pendiente', 'en_preparacion', 'listo', 'entregado', 'pagado', 'cancelado']
-const FILTROS_FECHA = [
-  { key: 'todos', label: 'Todos' },
-  { key: 'hoy', label: 'Hoy' },
-  { key: '7dias', label: 'Últimos 7 días' },
-]
-
-function coincideFecha(fechaPedido, filtroFecha) {
-  if (filtroFecha === 'todos') return true
-  const hoy = new Date('2026-07-24')
-  const fecha = new Date(fechaPedido)
-  const diffDias = Math.floor((hoy - fecha) / (1000 * 60 * 60 * 24))
-  if (filtroFecha === 'hoy') return diffDias === 0
-  if (filtroFecha === '7dias') return diffDias >= 0 && diffDias <= 7
-  return true
-}
+const ESTATUS_DISPONIBLES = ['pendiente', 'en_preparacion', 'listo', 'entregado', 'pagado', 'cancelado']
 
 export default function MeseroPedidosScreen({ onVerDetalle }) {
+  const { auth } = useAuth()
+  const [pedidos, setPedidos] = useState([])
+  const [cargando, setCargando] = useState(true)
+  const [refrescando, setRefrescando] = useState(false)
+  const [error, setError] = useState(null)
   const [grupoActivo, setGrupoActivo] = useState(null)
   const [estatusActivo, setEstatusActivo] = useState('Todos')
-  const [fechaActiva, setFechaActiva] = useState('todos')
+
+  const cargar = useCallback(async () => {
+    try {
+      setError(null)
+      const data = await api.get('/pedidos/', auth?.token)
+      setPedidos(data)
+    } catch (e) {
+      setError(e.message || 'No se pudieron cargar los pedidos')
+    } finally {
+      setCargando(false)
+      setRefrescando(false)
+    }
+  }, [auth?.token])
+
+  useFocusEffect(useCallback(() => { cargar() }, [cargar]))
+
+  const onRefresh = () => {
+    setRefrescando(true)
+    cargar()
+  }
 
   const conteos = useMemo(() => ({
-    activos: PEDIDOS.filter(p => GRUPOS.activos.includes(p.estado)).length,
-    pendientes: PEDIDOS.filter(p => GRUPOS.pendientes.includes(p.estado)).length,
-    finalizados: PEDIDOS.filter(p => GRUPOS.finalizados.includes(p.estado)).length,
-  }), [])
+    activos: pedidos.filter(p => GRUPOS.activos.includes(p.estado_actual?.nombre)).length,
+    pendientes: pedidos.filter(p => GRUPOS.pendientes.includes(p.estado_actual?.nombre)).length,
+    finalizados: pedidos.filter(p => GRUPOS.finalizados.includes(p.estado_actual?.nombre)).length,
+  }), [pedidos])
+
+  const estatusVisibles = useMemo(() => {
+    if (!grupoActivo) return ESTATUS_DISPONIBLES
+    return ESTATUS_DISPONIBLES.filter(e => GRUPOS[grupoActivo].includes(e))
+  }, [grupoActivo])
+
+  useEffect(() => {
+    if (estatusActivo !== 'Todos' && !estatusVisibles.includes(estatusActivo)) {
+      setEstatusActivo('Todos')
+    }
+  }, [grupoActivo])
 
   const pedidosFiltrados = useMemo(() => {
-    return PEDIDOS.filter(p => {
-      if (grupoActivo && !GRUPOS[grupoActivo].includes(p.estado)) return false
-      if (estatusActivo !== 'Todos' && p.estado !== estatusActivo) return false
-      if (!coincideFecha(p.fecha, fechaActiva)) return false
-      return true
-    }).sort((a, b) => (a.fecha < b.fecha ? 1 : -1))
-  }, [grupoActivo, estatusActivo, fechaActiva])
+    let lista = pedidos
+    if (grupoActivo) {
+      lista = lista.filter(p => GRUPOS[grupoActivo].includes(p.estado_actual?.nombre))
+    }
+    if (estatusActivo !== 'Todos') {
+      lista = lista.filter(p => p.estado_actual?.nombre === estatusActivo)
+    }
+    return [...lista].sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+  }, [pedidos, grupoActivo, estatusActivo])
 
-  const toggleGrupo = (grupo) => setGrupoActivo(prev => (prev === grupo ? null : grupo))
+  const toggleGrupo = (grupo) => {
+    setGrupoActivo(prev => (prev === grupo ? null : grupo))
+  }
+
+  if (cargando) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.titulo}>Pedidos</Text>
+        <ActivityIndicator style={{ marginTop: 40 }} color="#1F3864" />
+      </SafeAreaView>
+    )
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.titulo}>Pedidos</Text>
+      {error && <Text style={styles.error}>{error}</Text>}
 
       <View style={styles.resumen}>
         <Pressable
@@ -93,20 +120,8 @@ export default function MeseroPedidosScreen({ onVerDetalle }) {
         </Pressable>
       </View>
 
-      <View style={styles.filtroFila}>
-        {FILTROS_FECHA.map(f => (
-          <Pressable
-            key={f.key}
-            style={fechaActiva === f.key ? styles.chipActivo : styles.chip}
-            onPress={() => setFechaActiva(f.key)}
-          >
-            <Text style={fechaActiva === f.key ? styles.chipTextoActivo : styles.chipTexto}>{f.label}</Text>
-          </Pressable>
-        ))}
-      </View>
-
       <FlatList
-        data={FILTROS_ESTATUS}
+        data={['Todos', ...estatusVisibles]}
         horizontal
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item}
@@ -126,20 +141,22 @@ export default function MeseroPedidosScreen({ onVerDetalle }) {
 
       <FlatList
         data={pedidosFiltrados}
-        keyExtractor={item => item.id}
+        keyExtractor={item => String(item.id)}
         contentContainerStyle={styles.lista}
+        refreshControl={<RefreshControl refreshing={refrescando} onRefresh={onRefresh} />}
         ListEmptyComponent={<Text style={styles.vacio}>No hay pedidos con estos filtros.</Text>}
         renderItem={({ item }) => {
-          const info = ESTADOS_INFO[item.estado]
+          const nombreEstado = item.estado_actual?.nombre || 'pendiente'
+          const info = ESTADOS_INFO[nombreEstado] || ESTADOS_INFO.pendiente
           return (
             <Pressable style={[styles.card, { backgroundColor: info.bg }]} onPress={() => onVerDetalle(item.id)}>
               <View style={styles.cardHeader}>
-                <Text style={styles.cardTitulo}>{item.mesa} · #{item.id}</Text>
+                <Text style={styles.cardTitulo}>Mesa {item.mesa?.numero ?? '—'} · #{item.id}</Text>
                 <Text style={[styles.cardEstado, { color: info.color }]}>{info.label}</Text>
               </View>
               <View style={styles.cardFooter}>
-                <Text style={styles.cardFecha}>{item.fecha}</Text>
-                <Text style={styles.cardTotal}>${item.total.toFixed(2)}</Text>
+                <Text style={styles.cardFecha}>{item.created_at?.slice(0, 10)}</Text>
+                <Text style={styles.cardTotal}>${Number(item.total || 0).toFixed(2)}</Text>
               </View>
             </Pressable>
           )
@@ -152,27 +169,14 @@ export default function MeseroPedidosScreen({ onVerDetalle }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#ffffff' },
   titulo: { fontSize: 22, fontWeight: 'bold', color: '#1F3864', padding: 20, paddingBottom: 8 },
+  error: { color: '#c62828', textAlign: 'center', marginBottom: 8, paddingHorizontal: 16 },
   resumen: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 12 },
   resumenCard: { flex: 1, borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
   resumenCardActiva: { borderColor: '#1F3864' },
   resumenValor: { fontSize: 20, fontWeight: 'bold', color: '#1F3864' },
   resumenLabel: { fontSize: 12, color: '#555555', marginTop: 2 },
-  filtroFila: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    alignItems: 'flex-start',
-  },
-  filtroFlatList: {
-    flexGrow: 0,
-    marginBottom: 12,
-  },
-  filtroFilaEstatus: {
-    paddingHorizontal: 16,
-    gap: 8,
-    alignItems: 'center',
-  },
+  filtroFlatList: { flexGrow: 0, marginBottom: 12 },
+  filtroFilaEstatus: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
   chip: {
     alignSelf: 'flex-start',
     height: 34,
