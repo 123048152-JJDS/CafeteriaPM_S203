@@ -11,6 +11,7 @@ export default function Detalle() {
       onOcuparMesa={(mesaId, pedidoId) =>
         router.replace(`/mesas/editar-pedido?mesaId=${mesaId}&pedidoId=${pedidoId}`)
       }
+      onLiberar={() => router.replace("/mesas")}
       onCancelado={() => router.replace("/mesas")}
     />
   );

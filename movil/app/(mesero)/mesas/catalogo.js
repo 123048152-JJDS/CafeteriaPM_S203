@@ -3,11 +3,11 @@ import MeseroPedidoCatalogoScreen from "../../../src/screens/MeseroPedidoCatalog
 
 export default function Catalogo() {
   const router = useRouter();
-  const { mesaId, pedidoId } = useLocalSearchParams();
+  const { mesaId } = useLocalSearchParams();
 
   return (
     <MeseroPedidoCatalogoScreen
-      onVerResumen={() => router.push(`/mesas/resumen?mesaId=${mesaId}&pedidoId=${pedidoId}`)}
+      onVerResumen={() => router.push(`/mesas/resumen?mesaId=${mesaId}`)}
     />
   );
 }

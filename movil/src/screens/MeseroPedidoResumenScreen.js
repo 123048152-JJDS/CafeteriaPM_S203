@@ -9,8 +9,7 @@ import { useAuth } from '../context/AuthContext'
 export default function MeseroPedidoResumenScreen({ onCancelar, onEnviarACaja }) {
   const { mesaId } = useLocalSearchParams()
   const { auth } = useAuth()
-  const { items, cambiarCantidad, total, limpiar } = usePedidoEnCurso()
-  const [observaciones, setObservaciones] = useState('')
+  const { items, observaciones, setObservaciones, cambiarCantidad, total, limpiar } = usePedidoEnCurso()
   const [enviando, setEnviando] = useState(false)
 
   const handleCancelar = () => {

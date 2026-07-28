@@ -12,7 +12,7 @@ const COLUMNAS = [
   { label: 'Precio', key: 'precio', flex: 1 },
 ]
 
-export default function MeseroDetalleMesaScreen({ onEditarPedido, onOcuparMesa, onLiberar }) {
+export default function MeseroDetalleMesaScreen({ onEditarPedido, onOcuparMesa, onLiberar, onCancelado }) {
   const { mesaId, estado, pedidoId } = useLocalSearchParams()
   const { auth } = useAuth()
   const esReserva = estado === 'reservada'
@@ -21,6 +21,14 @@ export default function MeseroDetalleMesaScreen({ onEditarPedido, onOcuparMesa, 
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
   const [procesando, setProcesando] = useState(false)
+
+  const handleLiberarMesa = () => {
+    if (onLiberar) {
+      onLiberar()
+    } else if (onCancelado) {
+      onCancelado()
+    }
+  }
 
   const cargarPedido = useCallback(async () => {
     if (!pedidoId) { setCargando(false); return }
@@ -54,7 +62,7 @@ export default function MeseroDetalleMesaScreen({ onEditarPedido, onOcuparMesa, 
             setProcesando(true)
             try {
               await api.patch(`/mesas/${mesaId}/cancelar-pedido`, {}, auth?.token)
-              onLiberar()
+              handleLiberarMesa()
             } catch (e) {
               Alert.alert('No se pudo cancelar el pedido', e.message)
             } finally {
@@ -79,7 +87,7 @@ export default function MeseroDetalleMesaScreen({ onEditarPedido, onOcuparMesa, 
             setProcesando(true)
             try {
               await api.patch(`/mesas/${mesaId}/cancelar-reserva`, {}, auth?.token)
-              onLiberar()
+              handleLiberarMesa()
             } catch (e) {
               Alert.alert('No se pudo cancelar la reserva', e.message)
             } finally {
@@ -95,7 +103,7 @@ export default function MeseroDetalleMesaScreen({ onEditarPedido, onOcuparMesa, 
     setProcesando(true)
     try {
       const res = await api.patch(`/mesas/${mesaId}/ocupar`, {}, auth?.token)
-      onOcuparMesa(mesaId, res.pedido_id)
+      onOcuparMesa?.(mesaId, res.pedido_id)
     } catch (e) {
       Alert.alert('No se pudo ocupar la mesa', e.message)
     } finally {
@@ -147,7 +155,7 @@ export default function MeseroDetalleMesaScreen({ onEditarPedido, onOcuparMesa, 
               {puedeEditar && (
                 <BotonPrimario
                   titulo="Editar pedido"
-                  onPress={() => onEditarPedido(mesaId, pedidoId)}
+                  onPress={() => onEditarPedido?.(mesaId, pedidoId)}
                   disabled={procesando || !pedido}
                 />
               )}

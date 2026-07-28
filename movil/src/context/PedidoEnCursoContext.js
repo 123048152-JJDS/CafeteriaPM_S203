@@ -5,11 +5,13 @@ const PedidoEnCursoContext = createContext(null)
 export function PedidoEnCursoProvider({ children }) {
   const [items, setItems] = useState([]) // [{ id, nombre, precio, cantidad }]
   const [mesaActivaId, setMesaActivaId] = useState(null)
+  const [observaciones, setObservaciones] = useState('')
 
   const iniciarParaMesa = useCallback((mesaId) => {
     setMesaActivaId(prev => {
       if (String(prev) !== String(mesaId)) {
         setItems([])
+        setObservaciones('')
       }
       return mesaId
     })
@@ -36,6 +38,7 @@ export function PedidoEnCursoProvider({ children }) {
   const limpiar = () => {
     setItems([])
     setMesaActivaId(null)
+    setObservaciones('')
   }
 
   const total = useMemo(
@@ -52,6 +55,8 @@ export function PedidoEnCursoProvider({ children }) {
     <PedidoEnCursoContext.Provider
       value={{
         items,
+        observaciones,
+        setObservaciones,
         agregarProducto,
         cambiarCantidad,
         limpiar,
