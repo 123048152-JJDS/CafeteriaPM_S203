@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react'
-import { View, Text, StyleSheet, SafeAreaView, FlatList, Pressable, ActivityIndicator, RefreshControl } from 'react-native'
+import { View, Text, StyleSheet, SafeAreaView, FlatList, Pressable, ActivityIndicator, RefreshControl, Alert } from 'react-native'
 import { useFocusEffect } from 'expo-router'
 import { api } from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -10,18 +10,13 @@ const COLORES = {
   reservada:  { bg: '#fff8e1', border: '#ffc107', texto: '#f57f17' },
 }
 
-const ETIQUETA_BOTON = {
-  disponible: 'Nuevo pedido',
-  ocupada: 'Ver pedido',
-  reservada: 'Ver reserva',
-}
-
-export default function MeseroMesasScreen({ onSeleccionarMesa }) {
+export default function MeseroMesasScreen({ onNuevoPedido, onVerMesa }) {
   const { auth } = useAuth()
   const [mesas, setMesas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [refrescando, setRefrescando] = useState(false)
   const [error, setError] = useState(null)
+  const [procesandoId, setProcesandoId] = useState(null)
 
   const cargarMesas = useCallback(async () => {
     try {
@@ -36,31 +31,75 @@ export default function MeseroMesasScreen({ onSeleccionarMesa }) {
     }
   }, [auth?.token])
 
-  useFocusEffect(
-    useCallback(() => {
-      cargarMesas()
-    }, [cargarMesas])
-  )
+  useFocusEffect(useCallback(() => { cargarMesas() }, [cargarMesas]))
 
   const onRefresh = () => {
     setRefrescando(true)
     cargarMesas()
   }
 
+  const handleReservar = (mesaId) => {
+    Alert.alert('Reservar mesa', '¿Confirmas reservar esta mesa?', [
+      { text: 'No', style: 'cancel' },
+      {
+        text: 'Sí, reservar',
+        onPress: async () => {
+          setProcesandoId(mesaId)
+          try {
+            await api.patch(`/mesas/${mesaId}/reservar`, {}, auth?.token)
+            cargarMesas()
+          } catch (e) {
+            Alert.alert('No se pudo reservar la mesa', e.message)
+          } finally {
+            setProcesandoId(null)
+          }
+        },
+      },
+    ])
+  }
+
   const renderMesa = ({ item }) => {
     const color = COLORES[item.estado] || COLORES.disponible
+    const procesando = procesandoId === item.id
+
     return (
       <View style={[styles.card, { backgroundColor: color.bg, borderColor: color.border }]}>
         <Text style={[styles.cardNumero, { color: color.texto }]}>
           {String(item.numero).padStart(2, '0')}
         </Text>
         <Text style={styles.cardCapacidad}>{item.capacidad} p.</Text>
-        <Pressable
-          style={[styles.cardBoton, { backgroundColor: color.border }]}
-          onPress={() => onSeleccionarMesa(item.id, item.estado, item.pedido_activo_id)}
-        >
-          <Text style={styles.cardBotonTexto}>{ETIQUETA_BOTON[item.estado] || 'Ver'}</Text>
-        </Pressable>
+
+        {item.estado === 'disponible' ? (
+          <View style={styles.accionesDisponible}>
+            <Pressable
+              style={[styles.cardBoton, { backgroundColor: color.border }]}
+              onPress={() => onNuevoPedido(item.id)}
+              disabled={procesando}
+            >
+              <Text style={styles.cardBotonTexto}>Nuevo pedido</Text>
+            </Pressable>
+            <Pressable
+              style={styles.cardBotonSecundario}
+              onPress={() => handleReservar(item.id)}
+              disabled={procesando}
+            >
+              {procesando ? (
+                <ActivityIndicator size="small" color="#1F3864" />
+              ) : (
+                <Text style={styles.cardBotonSecundarioTexto}>Reservar</Text>
+              )}
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            style={[styles.cardBoton, { backgroundColor: color.border }]}
+            onPress={() => onVerMesa(item.id, item.estado, item.pedido_activo_id)}
+          >
+            <Text style={styles.cardBotonTexto}>
+              {item.estado === 'ocupada' ? 'Ver pedido' : 'Ver reserva'}
+            </Text>
+          </Pressable>
+        )}
       </View>
     )
   }
@@ -100,6 +139,9 @@ const styles = StyleSheet.create({
   card: { flex: 1, margin: 6, borderRadius: 12, borderWidth: 1.5, padding: 10, alignItems: 'center', gap: 4 },
   cardNumero: { fontSize: 20, fontWeight: 'bold' },
   cardCapacidad: { fontSize: 12, color: '#888888' },
-  cardBoton: { borderRadius: 8, paddingVertical: 4, paddingHorizontal: 6, marginTop: 4 },
+  accionesDisponible: { width: '100%', gap: 4, marginTop: 4 },
+  cardBoton: { borderRadius: 8, paddingVertical: 5, paddingHorizontal: 6, alignItems: 'center' },
   cardBotonTexto: { color: '#ffffff', fontSize: 9, fontWeight: 'bold' },
+  cardBotonSecundario: { borderRadius: 8, paddingVertical: 5, paddingHorizontal: 6, alignItems: 'center', borderWidth: 1, borderColor: '#1F3864', backgroundColor: '#ffffff' },
+  cardBotonSecundarioTexto: { color: '#1F3864', fontSize: 9, fontWeight: 'bold' },
 })

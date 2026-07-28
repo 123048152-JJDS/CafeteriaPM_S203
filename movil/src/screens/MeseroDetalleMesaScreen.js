@@ -12,7 +12,7 @@ const COLUMNAS = [
   { label: 'Precio', key: 'precio', flex: 1 },
 ]
 
-export default function MeseroDetalleMesaScreen({ onAgregarPedido, onLiberar }) {
+export default function MeseroDetalleMesaScreen({ onEditarPedido, onOcuparMesa, onLiberar }) {
   const { mesaId, estado, pedidoId } = useLocalSearchParams()
   const { auth } = useAuth()
   const esReserva = estado === 'reservada'
@@ -20,12 +20,10 @@ export default function MeseroDetalleMesaScreen({ onAgregarPedido, onLiberar }) 
   const [pedido, setPedido] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
+  const [procesando, setProcesando] = useState(false)
 
   const cargarPedido = useCallback(async () => {
-    if (!pedidoId) {
-      setCargando(false)
-      return
-    }
+    if (!pedidoId) { setCargando(false); return }
     try {
       setError(null)
       const data = await api.get(`/pedidos/${pedidoId}`, auth?.token)
@@ -39,32 +37,70 @@ export default function MeseroDetalleMesaScreen({ onAgregarPedido, onLiberar }) 
 
   useFocusEffect(useCallback(() => { cargarPedido() }, [cargarPedido]))
 
-  const confirmarLiberar = () => {
+  const nombreEstado = pedido?.estado_actual?.nombre
+  const puedeCancelar = nombreEstado === 'pendiente'
+  const puedeEditar = nombreEstado === 'pendiente' || nombreEstado === 'en_preparacion'
+
+  const confirmarCancelarPedido = () => {
     Alert.alert(
-      esReserva ? 'Cancelar reserva' : 'Liberar mesa',
-      esReserva
-        ? '¿Seguro que quieres cancelar esta reserva?'
-        : '¿Seguro que quieres cerrar y liberar esta mesa? Esta acción no se puede deshacer.',
+      'Cancelar pedido',
+      '¿Seguro que quieres cancelar este pedido? La mesa quedará disponible de nuevo.',
       [
         { text: 'No', style: 'cancel' },
         {
-          text: 'Sí, confirmar',
+          text: 'Sí, cancelar',
           style: 'destructive',
           onPress: async () => {
+            setProcesando(true)
             try {
-              if (esReserva) {
-                await api.patch(`/mesas/${mesaId}/cancelar-reserva`, {}, auth?.token)
-              } else {
-                await api.patch(`/mesas/${mesaId}/liberar`, {}, auth?.token)
-              }
+              await api.patch(`/mesas/${mesaId}/cancelar-pedido`, {}, auth?.token)
               onLiberar()
             } catch (e) {
-              Alert.alert('No se pudo completar la acción', e.message)
+              Alert.alert('No se pudo cancelar el pedido', e.message)
+            } finally {
+              setProcesando(false)
             }
           },
         },
       ]
     )
+  }
+
+  const confirmarCancelarReserva = () => {
+    Alert.alert(
+      'Cancelar reserva',
+      '¿Seguro que quieres cancelar esta reserva?',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Sí, cancelar',
+          style: 'destructive',
+          onPress: async () => {
+            setProcesando(true)
+            try {
+              await api.patch(`/mesas/${mesaId}/cancelar-reserva`, {}, auth?.token)
+              onLiberar()
+            } catch (e) {
+              Alert.alert('No se pudo cancelar la reserva', e.message)
+            } finally {
+              setProcesando(false)
+            }
+          },
+        },
+      ]
+    )
+  }
+
+  const handleOcupar = async () => {
+    setProcesando(true)
+    try {
+      const res = await api.patch(`/mesas/${mesaId}/ocupar`, {}, auth?.token)
+      onOcuparMesa(mesaId, res.pedido_id)
+    } catch (e) {
+      Alert.alert('No se pudo ocupar la mesa', e.message)
+    } finally {
+      setProcesando(false)
+    }
   }
 
   const items = (pedido?.detalles || []).map(d => ({
@@ -92,7 +128,7 @@ export default function MeseroDetalleMesaScreen({ onAgregarPedido, onLiberar }) 
           <>
             <View style={styles.alerta}>
               <Text style={styles.alertaTexto}>
-                ⚠️ Pedido #{pedido?.id} · {pedido?.estado_actual?.nombre || '—'}
+                ⚠️ Pedido #{pedido?.id} · {nombreEstado || '—'}
               </Text>
             </View>
             <TablaDetalle columnas={COLUMNAS} datos={items} />
@@ -101,21 +137,30 @@ export default function MeseroDetalleMesaScreen({ onAgregarPedido, onLiberar }) 
         )}
 
         <View style={styles.botones}>
-          {/*
-            Fix bug 2: el backend no soporta agregar detalles a un pedido ya
-            creado (solo POST /pedidos/ crea uno nuevo desde cero). Mostrar
-            "Agregar pedido" en una mesa ya ocupada crearía un segundo pedido
-            duplicado para la misma mesa. Por eso solo se ofrece para
-            reservas que todavía no tienen pedido.
-          */}
-          {esReserva && (
-            <BotonPrimario titulo="Agregar pedido" onPress={() => onAgregarPedido(mesaId, pedidoId)} />
+          {esReserva ? (
+            <>
+              <BotonPrimario titulo="Ocupar mesa" onPress={handleOcupar} disabled={procesando} />
+              <BotonPrimario titulo="Cancelar reserva" color="#ef5350" onPress={confirmarCancelarReserva} disabled={procesando} />
+            </>
+          ) : (
+            <>
+              {puedeEditar && (
+                <BotonPrimario
+                  titulo="Editar pedido"
+                  onPress={() => onEditarPedido(mesaId, pedidoId)}
+                  disabled={procesando || !pedido}
+                />
+              )}
+              {puedeCancelar && (
+                <BotonPrimario titulo="Cancelar pedido" color="#ef5350" onPress={confirmarCancelarPedido} disabled={procesando} />
+              )}
+              {!puedeCancelar && !esReserva && (
+                <Text style={styles.avisoNoCancelable}>
+                  Este pedido ya está en preparación o listo; no se puede cancelar desde aquí.
+                </Text>
+              )}
+            </>
           )}
-          <BotonPrimario
-            titulo={esReserva ? 'Cancelar reserva' : 'Liberar'}
-            color="#ef5350"
-            onPress={confirmarLiberar}
-          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -133,4 +178,5 @@ const styles = StyleSheet.create({
   alertaTexto: { color: '#f57f17', fontWeight: 'bold' },
   total: { fontSize: 16, fontWeight: 'bold', color: '#1F3864', textAlign: 'right' },
   botones: { gap: 8 },
+  avisoNoCancelable: { fontSize: 12, color: '#888888', textAlign: 'center', fontStyle: 'italic' },
 })

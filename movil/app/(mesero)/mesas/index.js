@@ -8,20 +8,18 @@ export default function Mesas() {
   const router = useRouter();
   const { auth } = useAuth();
 
-  const handleSeleccionarMesa = async (mesaId, estado, pedidoActivoId) => {
-    if (estado === "disponible") {
-      try {
-        const res = await api.patch(`/mesas/${mesaId}/ocupar`, {}, auth?.token);
-        router.push(`/mesas/catalogo?mesaId=${mesaId}&pedidoId=${res.pedido_id}`);
-      } catch (e) {
-        Alert.alert("No se pudo ocupar la mesa", e.message);
-      }
-      return;
+  const handleNuevoPedido = async (mesaId) => {
+    try {
+      const res = await api.patch(`/mesas/${mesaId}/ocupar`, {}, auth?.token);
+      router.push(`/mesas/catalogo?mesaId=${mesaId}&pedidoId=${res.pedido_id}`);
+    } catch (e) {
+      Alert.alert("No se pudo ocupar la mesa", e.message);
     }
+  };
 
-    // ocupada o reservada → ver detalle del pedido existente
+  const handleVerMesa = (mesaId, estado, pedidoActivoId) => {
     router.push(`/mesas/detalle?mesaId=${mesaId}&estado=${estado}&pedidoId=${pedidoActivoId}`);
   };
 
-  return <MeseroMesasScreen onSeleccionarMesa={handleSeleccionarMesa} />;
+  return <MeseroMesasScreen onNuevoPedido={handleNuevoPedido} onVerMesa={handleVerMesa} />;
 }

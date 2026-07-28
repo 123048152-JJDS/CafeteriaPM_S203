@@ -1,4 +1,5 @@
-const API_BASE_URL = "http://localhost:8000"; // misma IP que usas en Expo, puerto de FastAPI
+// const API_BASE_URL = "http://192.168.0.105:8000"; 
+const API_BASE_URL = "http://localhost:8000"; 
 
 async function request(path, { method = "GET", body, token } = {}) {
   const headers = { "Content-Type": "application/json" };
@@ -13,9 +14,7 @@ async function request(path, { method = "GET", body, token } = {}) {
   let data = null;
   try {
     data = await response.json();
-  } catch {
-    // respuestas sin body (204, etc.)
-  }
+  } catch {}
 
   if (!response.ok) {
     const message = data?.detail || `Error ${response.status}`;

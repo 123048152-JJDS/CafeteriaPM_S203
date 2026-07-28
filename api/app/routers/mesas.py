@@ -14,7 +14,7 @@ router = APIRouter(prefix="/mesas", tags=["Mesas"])
 
 def get_estado_mesa(db: Session, mesa_id: int):
     estados_activos = db.query(OrderStatus).filter(
-        OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo", "entregado", "reservado"])
+        OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo", "reservado"])
     ).all()
     ids_activos = [e.id for e in estados_activos]
 
@@ -138,7 +138,7 @@ def ocupar_mesa(
         raise HTTPException(404, "Mesa no encontrada")
 
     estados_activos = db.query(OrderStatus).filter(
-        OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo", "entregado"])
+        OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo"])
     ).all()
     ids_activos = [e.id for e in estados_activos]
     pedido_activo = db.query(Order).filter(
@@ -151,6 +151,30 @@ def ocupar_mesa(
     estado_pendiente = db.query(OrderStatus).filter(OrderStatus.nombre == "pendiente").first()
     if not estado_pendiente:
         raise HTTPException(500, "Estado 'pendiente' no configurado")
+
+    estado_reservado = db.query(OrderStatus).filter(OrderStatus.nombre == "reservado").first()
+    pedido_reservado = None
+    if estado_reservado:
+        pedido_reservado = db.query(Order).filter(
+            Order.id_mesa == mesa_id,
+            Order.id_estado_actual == estado_reservado.id
+        ).first()
+
+    if pedido_reservado:
+        estado_anterior_id = pedido_reservado.id_estado_actual
+        pedido_reservado.id_estado_actual = estado_pendiente.id
+        pedido_reservado.id_mesero = current_user.id
+        pedido_reservado.updated_at = datetime.now()
+        historial = OrderStatusHistory(
+            id_pedido=pedido_reservado.id,
+            id_estado_origen=estado_anterior_id,
+            id_estado_destino=estado_pendiente.id,
+            id_usuario=current_user.id,
+        )
+        db.add(historial)
+        db.commit()
+        db.refresh(pedido_reservado)
+        return {"message": "Reserva convertida en pedido", "pedido_id": pedido_reservado.id}
 
     pedido = Order(
         id_mesa=mesa_id,
@@ -174,7 +198,7 @@ def liberar_mesa(
         raise HTTPException(404, "Mesa no encontrada")
 
     estados_activos = db.query(OrderStatus).filter(
-        OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo", "entregado"])
+        OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo"])
     ).all()
     ids_activos = [e.id for e in estados_activos]
     pedido_activo = db.query(Order).filter(
@@ -264,3 +288,51 @@ def cancelar_reserva(
         db.commit()
 
     return {"message": "Reserva cancelada correctamente"}
+
+@router.patch("/{mesa_id}/cancelar-pedido")
+def cancelar_pedido_mesa(
+    mesa_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_roles("admin", "mesero"))
+):
+    mesa = db.query(Table).filter(Table.id == mesa_id).first()
+    if not mesa:
+        raise HTTPException(404, "Mesa no encontrada")
+
+    estados_activos = db.query(OrderStatus).filter(
+        OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo", "entregado"])
+    ).all()
+    ids_activos = [e.id for e in estados_activos]
+    pedido_activo = db.query(Order).filter(
+        Order.id_mesa == mesa_id,
+        Order.id_estado_actual.in_(ids_activos)
+    ).first()
+
+    if not pedido_activo:
+        raise HTTPException(400, "La mesa no tiene pedido activo")
+
+    if pedido_activo.estado_actual.nombre != "pendiente":
+        raise HTTPException(
+            400,
+            f"No se puede cancelar un pedido en estado '{pedido_activo.estado_actual.nombre}'. "
+            "Solo se pueden cancelar pedidos pendientes."
+        )
+
+    estado_cancelado = db.query(OrderStatus).filter(OrderStatus.nombre == "cancelado").first()
+    if not estado_cancelado:
+        raise HTTPException(500, "Estado 'cancelado' no configurado")
+
+    estado_anterior_id = pedido_activo.id_estado_actual
+    pedido_activo.id_estado_actual = estado_cancelado.id
+    pedido_activo.updated_at = datetime.now()
+
+    historial = OrderStatusHistory(
+        id_pedido=pedido_activo.id,
+        id_estado_origen=estado_anterior_id,
+        id_estado_destino=estado_cancelado.id,
+        id_usuario=current_user.id,
+    )
+    db.add(historial)
+    db.commit()
+
+    return {"message": "Pedido cancelado y mesa liberada", "pedido_id": pedido_activo.id}

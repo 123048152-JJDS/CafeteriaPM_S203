@@ -7,8 +7,8 @@ import { useAuth } from '../context/AuthContext'
 const ESTADOS_INFO = {
   pendiente:      { label: 'Pendiente',      color: '#f57f17', bg: '#fff8e1' },
   en_preparacion: { label: 'En preparación', color: '#e65100', bg: '#fff3e0' },
-  listo:          { label: 'Listo',          color: '#2e7d32', bg: '#e8f5e9' },
-  entregado:      { label: 'Entregado',      color: '#1565c0', bg: '#e3f2fd' },
+  listo:          { label: 'Listo',          color: '#1565c0', bg: '#e3f2fd' },
+  entregado:      { label: 'Entregado',      color: '#2e7d32', bg: '#e8f5e9' },
   pagado:         { label: 'Pagado',         color: '#37474f', bg: '#eceff1' },
   cancelado:      { label: 'Cancelado',      color: '#c62828', bg: '#ffebee' },
 }
