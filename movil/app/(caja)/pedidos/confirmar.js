@@ -5,8 +5,7 @@ export default function Confirmar() {
   const router = useRouter();
   return (
     <CajaConfirmarPedidoScreen
-      onModificar={() => router.push("/pedidos/modificar")}
-      onConfirmarCobro={() => router.push("/pedidos/pagos")}
+      onConfirmarCobro={(pedidoId) => router.push(`/pedidos/pagos?pedidoId=${pedidoId}`)}
     />
   );
 }

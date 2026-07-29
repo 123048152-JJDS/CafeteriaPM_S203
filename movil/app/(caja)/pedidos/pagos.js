@@ -1,15 +1,18 @@
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import CajaPagosScreen from "../../../src/screens/CajaPagosScreen";
 
 export default function Pagos() {
   const router = useRouter();
+  const { pedidoId } = useLocalSearchParams();
 
-  const handlePagar = ({ metodo, montoRecibido, cambio, total }) => {
+  const handlePagar = ({ ventaId, metodo, montoRecibido, cambio, total }) => {
     const params = new URLSearchParams({
+      pedidoId: String(pedidoId),
+      ventaId: String(ventaId),
       metodo,
-      montoRecibido: montoRecibido.toFixed(2),
-      cambio: cambio.toFixed(2),
-      total: total.toFixed(2),
+      montoRecibido,
+      cambio,
+      total,
     }).toString();
     router.push(`/pedidos/ticket?${params}`);
   };
