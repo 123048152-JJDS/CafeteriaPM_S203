@@ -3,5 +3,5 @@ import CocinaNuevoProductoScreen from "../../../src/screens/CocinaNuevoProductoS
 
 export default function NuevoProducto() {
   const router = useRouter();
-  return <CocinaNuevoProductoScreen onGuardar={() => router.back()} />;
+  return <CocinaNuevoProductoScreen onGuardado={() => router.back()} />;
 }
