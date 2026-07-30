@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, SafeAreaView, TextInput, KeyboardAvoidingView, 
 import BotonPrimario from '../components/BotonPrimario'
 import { useAuth } from '../context/AuthContext'
 
-export default function MeseroPerfilScreen({ onLogout }) {
+export default function CocinaPerfilScreen({ onLogout }) {
   const { auth } = useAuth()
   const [nombre, setNombre] = useState(auth?.nombre || '')
 
@@ -30,6 +30,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#ffffff' },
   titulo: { fontSize: 22, fontWeight: 'bold', color: '#1F3864', padding: 20 },
   content: { paddingHorizontal: 24, gap: 8, paddingBottom: 24 },
-  label: { fontSize: 14, color: '#555555' },
+  label: { fontSize: 14, color: '#666666', marginTop: 8 },
   input: { borderWidth: 1, borderColor: '#dddddd', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 16, fontSize: 15, marginBottom: 8 },
 })

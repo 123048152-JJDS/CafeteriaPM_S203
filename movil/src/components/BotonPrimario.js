@@ -1,11 +1,19 @@
 import React from 'react'
 import { Pressable, Text, StyleSheet } from 'react-native'
 
-export default function BotonPrimario({ titulo, color, onPress }) {
+export default function BotonPrimario({ titulo, color, onPress, disabled }) {
   return (
     <Pressable
-      style={[styles.boton, { backgroundColor: color || '#1F3864' }]}
+      style={({ pressed }) => [
+        styles.boton,
+        {
+          backgroundColor: disabled ? '#c5c5c5' : (color || '#1F3864'),
+          opacity: pressed ? 0.85 : 1,
+          transform: [{ scale: pressed ? 0.98 : 1 }],
+        },
+      ]}
       onPress={onPress}
+      disabled={disabled}
     >
       <Text style={styles.botonTexto}>{titulo}</Text>
     </Pressable>

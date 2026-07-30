@@ -1,50 +1,130 @@
-import React from 'react'
-import { View, Text, StyleSheet, SafeAreaView, FlatList, Pressable } from 'react-native'
-
-const MESAS = [
-  { id: '1', numero: '01', capacidad: 4, estado: 'libre' },
-  { id: '2', numero: '02', capacidad: 4, estado: 'ocupada' },
-  { id: '3', numero: '03', capacidad: 4, estado: 'libre' },
-  { id: '4', numero: '04', capacidad: 6, estado: 'reservada' },
-  { id: '5', numero: '05', capacidad: 2, estado: 'libre' },
-  { id: '6', numero: '06', capacidad: 4, estado: 'ocupada' },
-  { id: '7', numero: '07', capacidad: 2, estado: 'libre' },
-  { id: '8', numero: '08', capacidad: 2, estado: 'libre' },
-  { id: '9', numero: '09', capacidad: 6, estado: 'ocupada' },
-]
+import React, { useCallback, useState } from 'react'
+import { View, Text, StyleSheet, SafeAreaView, FlatList, Pressable, ActivityIndicator, RefreshControl, Alert } from 'react-native'
+import { useFocusEffect } from 'expo-router'
+import { api } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 
 const COLORES = {
-  libre: { bg: '#e8f5e9', border: '#4caf50', texto: '#2e7d32' },
-  ocupada: { bg: '#ffebee', border: '#ef5350', texto: '#c62828' },
-  reservada: { bg: '#fff8e1', border: '#ffc107', texto: '#f57f17' },
+  disponible: { bg: '#e8f5e9', border: '#4caf50', texto: '#2e7d32' },
+  ocupada:    { bg: '#ffebee', border: '#ef5350', texto: '#c62828' },
+  reservada:  { bg: '#fff8e1', border: '#ffc107', texto: '#f57f17' },
 }
 
-export default function MeseroMesasScreen({ onSeleccionarMesa }) {
+export default function MeseroMesasScreen({ onNuevoPedido, onVerMesa }) {
+  const { auth } = useAuth()
+  const [mesas, setMesas] = useState([])
+  const [cargando, setCargando] = useState(true)
+  const [refrescando, setRefrescando] = useState(false)
+  const [error, setError] = useState(null)
+  const [procesandoId, setProcesandoId] = useState(null)
+
+  const cargarMesas = useCallback(async () => {
+    try {
+      setError(null)
+      const data = await api.get('/mesas/', auth?.token)
+      setMesas(data)
+    } catch (e) {
+      setError(e.message || 'No se pudieron cargar las mesas')
+    } finally {
+      setCargando(false)
+      setRefrescando(false)
+    }
+  }, [auth?.token])
+
+  useFocusEffect(useCallback(() => { cargarMesas() }, [cargarMesas]))
+
+  const onRefresh = () => {
+    setRefrescando(true)
+    cargarMesas()
+  }
+
+  const handleReservar = (mesaId) => {
+    Alert.alert('Reservar mesa', '¿Confirmas reservar esta mesa?', [
+      { text: 'No', style: 'cancel' },
+      {
+        text: 'Sí, reservar',
+        onPress: async () => {
+          setProcesandoId(mesaId)
+          try {
+            await api.patch(`/mesas/${mesaId}/reservar`, {}, auth?.token)
+            cargarMesas()
+          } catch (e) {
+            Alert.alert('No se pudo reservar la mesa', e.message)
+          } finally {
+            setProcesandoId(null)
+          }
+        },
+      },
+    ])
+  }
+
   const renderMesa = ({ item }) => {
-    const color = COLORES[item.estado]
+    const color = COLORES[item.estado] || COLORES.disponible
+    const procesando = procesandoId === item.id
+
     return (
       <View style={[styles.card, { backgroundColor: color.bg, borderColor: color.border }]}>
-        <Text style={[styles.cardNumero, { color: color.texto }]}>{item.numero}</Text>
+        <Text style={[styles.cardNumero, { color: color.texto }]}>
+          {String(item.numero).padStart(2, '0')}
+        </Text>
         <Text style={styles.cardCapacidad}>{item.capacidad} p.</Text>
-        <Pressable
-          style={[styles.cardBoton, { backgroundColor: color.border }]}
-          onPress={() => onSeleccionarMesa(item.id)}
-        >
-          <Text style={styles.cardBotonTexto}>Seleccionar</Text>
-        </Pressable>
+
+        {item.estado === 'disponible' ? (
+          <View style={styles.accionesDisponible}>
+            <Pressable
+              style={[styles.cardBoton, { backgroundColor: color.border }]}
+              onPress={() => onNuevoPedido(item.id)}
+              disabled={procesando}
+            >
+              <Text style={styles.cardBotonTexto}>Nuevo pedido</Text>
+            </Pressable>
+            <Pressable
+              style={styles.cardBotonSecundario}
+              onPress={() => handleReservar(item.id)}
+              disabled={procesando}
+            >
+              {procesando ? (
+                <ActivityIndicator size="small" color="#1F3864" />
+              ) : (
+                <Text style={styles.cardBotonSecundarioTexto}>Reservar</Text>
+              )}
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            style={[styles.cardBoton, { backgroundColor: color.border }]}
+            onPress={() => onVerMesa(item.id, item.estado, item.pedido_activo_id)}
+          >
+            <Text style={styles.cardBotonTexto}>
+              {item.estado === 'ocupada' ? 'Ver pedido' : 'Ver reserva'}
+            </Text>
+          </Pressable>
+        )}
       </View>
+    )
+  }
+
+  if (cargando) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.titulo}>Seleccionar mesa</Text>
+        <ActivityIndicator style={{ marginTop: 40 }} color="#1F3864" />
+      </SafeAreaView>
     )
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.titulo}>Seleccionar mesa</Text>
+      {error && <Text style={styles.error}>{error}</Text>}
       <FlatList
-        data={MESAS}
-        keyExtractor={item => item.id}
+        data={mesas}
+        keyExtractor={item => String(item.id)}
         numColumns={3}
         renderItem={renderMesa}
         contentContainerStyle={styles.grid}
+        refreshControl={<RefreshControl refreshing={refrescando} onRefresh={onRefresh} />}
+        ListEmptyComponent={<Text style={styles.vacio}>No hay mesas registradas.</Text>}
       />
     </SafeAreaView>
   )
@@ -53,10 +133,15 @@ export default function MeseroMesasScreen({ onSeleccionarMesa }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#ffffff' },
   titulo: { fontSize: 22, fontWeight: 'bold', color: '#1F3864', padding: 20 },
-  grid: { paddingHorizontal: 12 },
+  error: { color: '#c62828', textAlign: 'center', marginBottom: 8, paddingHorizontal: 16 },
+  vacio: { textAlign: 'center', color: '#999999', marginTop: 40 },
+  grid: { paddingHorizontal: 12, flexGrow: 1 },
   card: { flex: 1, margin: 6, borderRadius: 12, borderWidth: 1.5, padding: 10, alignItems: 'center', gap: 4 },
   cardNumero: { fontSize: 20, fontWeight: 'bold' },
   cardCapacidad: { fontSize: 12, color: '#888888' },
-  cardBoton: { borderRadius: 8, paddingVertical: 4, paddingHorizontal: 8, marginTop: 4 },
-  cardBotonTexto: { color: '#ffffff', fontSize: 10, fontWeight: 'bold' },
+  accionesDisponible: { width: '100%', gap: 4, marginTop: 4 },
+  cardBoton: { borderRadius: 8, paddingVertical: 5, paddingHorizontal: 6, alignItems: 'center' },
+  cardBotonTexto: { color: '#ffffff', fontSize: 9, fontWeight: 'bold' },
+  cardBotonSecundario: { borderRadius: 8, paddingVertical: 5, paddingHorizontal: 6, alignItems: 'center', borderWidth: 1, borderColor: '#1F3864', backgroundColor: '#ffffff' },
+  cardBotonSecundarioTexto: { color: '#1F3864', fontSize: 9, fontWeight: 'bold' },
 })

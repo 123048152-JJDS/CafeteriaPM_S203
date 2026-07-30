@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import MeseroPerfilScreen from "../../src/screens/MeseroPerfilScreen";
+import CajaPerfilScreen from "../../src/screens/CajaPerfilScreen";
 import { useAuth } from "../../src/context/AuthContext";
 
 export default function Perfil() {
@@ -11,5 +11,5 @@ export default function Perfil() {
     router.replace("/welcome");
   };
 
-  return <MeseroPerfilScreen onLogout={handleLogout} />;
+  return <CajaPerfilScreen onLogout={handleLogout} />;
 }

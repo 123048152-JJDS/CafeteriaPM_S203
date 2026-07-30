@@ -24,7 +24,7 @@ from app.models.user import User
 from app.services.inventario import descontar_ingredientes
 from app.schemas.order import (
     OrderOut, OrderDetailOut, OrderCreate, OrderDetailCreate,
-    OrderStatusChange, OrderStatusOut
+    OrderStatusChange, OrderStatusOut, OrderDetailUpdate
 )
 
 router = APIRouter()
@@ -131,6 +131,20 @@ def create_pedido(
     mesa = db.query(Table).filter(Table.id == data.id_mesa).first()
     if not mesa:
         raise HTTPException(400, "Mesa no encontrada")
+
+    estados_activos = db.query(OrderStatus).filter(
+        OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo", "entregado"])
+    ).all()
+    ids_activos = [e.id for e in estados_activos]
+    pedido_existente = db.query(Order).filter(
+        Order.id_mesa == data.id_mesa,
+        Order.id_estado_actual.in_(ids_activos)
+    ).first()
+    if pedido_existente:
+        raise HTTPException(
+            400,
+            f"La mesa ya tiene un pedido activo (#{pedido_existente.id}). Usa 'Editar pedido' en lugar de crear uno nuevo."
+        )
 
     estado_pendiente = db.query(OrderStatus).filter(
         OrderStatus.nombre == "pendiente"
@@ -327,3 +341,115 @@ def generar_ticket_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=ticket_pedido_{pedido_id}.pdf"}
     )
+
+ESTADOS_EDITABLES = ["pendiente", "en_preparacion"]
+
+
+def _validar_pedido_editable(pedido: Order):
+    if pedido.estado_actual.nombre not in ESTADOS_EDITABLES:
+        raise HTTPException(
+            400,
+            f"No se pueden modificar los productos de un pedido en estado '{pedido.estado_actual.nombre}'."
+        )
+
+
+def _recalcular_total(pedido: Order) -> Order:
+    pedido.total = sum(float(d.precio_unitario) * d.cantidad for d in pedido.detalles)
+    return pedido
+
+
+@router.post("/{pedido_id}/detalles", response_model=OrderOut, status_code=201)
+def agregar_detalle(
+    pedido_id: int,
+    data: OrderDetailCreate,
+    db: Session = Depends(get_db),
+    _=Depends(require_roles("mesero", "admin"))
+):
+    pedido = db.query(Order).filter(Order.id == pedido_id).first()
+    if not pedido:
+        raise HTTPException(404, "Pedido no encontrado")
+    _validar_pedido_editable(pedido)
+
+    producto = db.query(Product).filter(Product.id == data.id_producto).first()
+    if not producto:
+        raise HTTPException(400, f"Producto ID {data.id_producto} no existe")
+    if not producto.disponible:
+        raise HTTPException(400, f"Producto '{producto.nombre}' no está disponible")
+
+    existente = next((d for d in pedido.detalles if d.id_producto == data.id_producto), None)
+    if existente:
+        existente.cantidad += data.cantidad
+    else:
+        detalle = OrderDetail(
+            id_pedido=pedido.id,
+            id_producto=data.id_producto,
+            cantidad=data.cantidad,
+            precio_unitario=float(producto.precio),
+        )
+        db.add(detalle)
+        db.flush()
+        if data.observacion:
+            db.add(OrderDetailObservation(id_detalle=detalle.id, observacion=data.observacion))
+
+    db.commit()
+    db.refresh(pedido)
+    return _recalcular_total(pedido)
+
+
+@router.patch("/{pedido_id}/detalles/{detalle_id}", response_model=OrderOut)
+def actualizar_detalle(
+    pedido_id: int,
+    detalle_id: int,
+    data: OrderDetailUpdate,
+    db: Session = Depends(get_db),
+    _=Depends(require_roles("mesero", "admin"))
+):
+    pedido = db.query(Order).filter(Order.id == pedido_id).first()
+    if not pedido:
+        raise HTTPException(404, "Pedido no encontrado")
+    _validar_pedido_editable(pedido)
+
+    detalle = db.query(OrderDetail).filter(
+        OrderDetail.id == detalle_id, OrderDetail.id_pedido == pedido_id
+    ).first()
+    if not detalle:
+        raise HTTPException(404, "Detalle no encontrado en este pedido")
+
+    if data.cantidad is not None:
+        if data.cantidad <= 0:
+            if len(pedido.detalles) <= 1:
+                raise HTTPException(400, "No puedes vaciar el último producto. Cancela el pedido en su lugar.")
+            db.delete(detalle)
+        else:
+            detalle.cantidad = data.cantidad
+
+    db.commit()
+    db.refresh(pedido)
+    return _recalcular_total(pedido)
+
+
+@router.delete("/{pedido_id}/detalles/{detalle_id}", response_model=OrderOut)
+def eliminar_detalle(
+    pedido_id: int,
+    detalle_id: int,
+    db: Session = Depends(get_db),
+    _=Depends(require_roles("mesero", "admin"))
+):
+    pedido = db.query(Order).filter(Order.id == pedido_id).first()
+    if not pedido:
+        raise HTTPException(404, "Pedido no encontrado")
+    _validar_pedido_editable(pedido)
+
+    detalle = db.query(OrderDetail).filter(
+        OrderDetail.id == detalle_id, OrderDetail.id_pedido == pedido_id
+    ).first()
+    if not detalle:
+        raise HTTPException(404, "Detalle no encontrado en este pedido")
+
+    if len(pedido.detalles) <= 1:
+        raise HTTPException(400, "No puedes eliminar el último producto. Cancela el pedido en su lugar.")
+
+    db.delete(detalle)
+    db.commit()
+    db.refresh(pedido)
+    return _recalcular_total(pedido)
