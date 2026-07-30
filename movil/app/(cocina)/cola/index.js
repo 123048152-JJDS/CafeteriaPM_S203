@@ -5,7 +5,7 @@ export default function Cola() {
   const router = useRouter();
   return (
     <CocinaPedidosScreen
-      onVerDetalle={(pedido) => router.push(`/cola/detalle?pedido=${pedido}`)}
+      onVerDetalle={(pedidoId) => router.push(`/cola/detalle?pedidoId=${pedidoId}`)}
     />
   );
 }

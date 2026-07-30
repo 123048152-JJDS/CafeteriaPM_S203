@@ -3,16 +3,10 @@ import CocinaEditarProductoScreen from "../../../src/screens/CocinaEditarProduct
 
 export default function EditarProducto() {
   const router = useRouter();
-
-  const handleGuardar = (_datos) => {
-    // Paso 8: PATCH /productos/{id}
-    router.back();
-  };
-
-  const handleEliminar = (_id) => {
-    // Paso 8: DELETE /productos/{id}
-    router.back();
-  };
-
-  return <CocinaEditarProductoScreen onGuardar={handleGuardar} onEliminar={handleEliminar} />;
+  return (
+    <CocinaEditarProductoScreen
+      onGuardado={() => router.back()}
+      onEliminado={() => router.back()}
+    />
+  );
 }
