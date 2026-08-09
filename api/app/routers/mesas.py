@@ -213,12 +213,14 @@ def liberar_mesa(
     if not estado_pagado:
         raise HTTPException(500, "Estado 'pagado' no configurado")
 
+    estado_anterior_id = pedido_activo.id_estado_actual  
+
     pedido_activo.id_estado_actual = estado_pagado.id
     pedido_activo.updated_at = datetime.now()
 
     historial = OrderStatusHistory(
         id_pedido=pedido_activo.id,
-        id_estado_origen=pedido_activo.id_estado_actual,
+        id_estado_origen=estado_anterior_id,
         id_estado_destino=estado_pagado.id,
         id_usuario=current_user.id,
     )
