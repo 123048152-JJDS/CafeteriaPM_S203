@@ -1,6 +1,4 @@
-// const API_BASE_URL = "http://192.168.0.105:8000"; 
-const API_BASE_URL = "http://10.16.29.177:8000";
-// const API_BASE_URL = "http://localhost:8000"; 
+const API_BASE_URL = "https://cafeteriapms203-production-b789.up.railway.app";
 
 async function request(path, { method = "GET", body, token } = {}) {
   const headers = { "Content-Type": "application/json" };

@@ -10,7 +10,7 @@ from functools import wraps
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-API_BASE_URL = "http://localhost:8000"
+API_BASE_URL = "https://cafeteriapms203-production-b789.up.railway.app"
 
 @app.template_filter('format_date')
 def format_date(value, format='%d/%m/%Y'):
