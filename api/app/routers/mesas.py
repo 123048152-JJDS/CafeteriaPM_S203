@@ -231,7 +231,10 @@ def liberar_mesa(
     if not pedido_activo.venta:
         metodo = db.query(PaymentMethod).first()
         metodo_id = metodo.id if metodo else 1
-        total = sum(float(d.subtotal or 0) for d in pedido_activo.detalles)
+        total = sum(
+            (float(d.subtotal) if d.subtotal is not None and float(d.subtotal) > 0 else float(d.precio_unitario or 0) * int(d.cantidad or 0))
+            for d in pedido_activo.detalles
+        )
         venta = Sale(
             id_pedido=pedido_activo.id,
             id_cajero=current_user.id,
