@@ -4,7 +4,7 @@
     "slug": "movil",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logoCafe.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "scheme": "cafeteriapm",
@@ -21,13 +21,21 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.piranger12.movil"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router"
-    ]
+      "expo-router",
+      "expo-font"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0de025f7-dd94-4a36-b76e-5bdfb1440468"
+      }
+    }
   }
 }
