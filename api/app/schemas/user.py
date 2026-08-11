@@ -32,3 +32,7 @@ class UserOut(BaseModel):
     role:       RoleOut
 
     model_config = {"from_attributes": True}
+
+class UserSelfUpdate(BaseModel):
+    nombre:   Optional[str] = None
+    password: Optional[str] = None

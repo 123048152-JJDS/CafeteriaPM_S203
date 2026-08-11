@@ -4,6 +4,7 @@ import { useLocalSearchParams, useFocusEffect } from 'expo-router'
 import TablaDetalle from '../components/TablaDetalle'
 import { api } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import { obtenerMapaEstados } from '../services/estados'
 
 const COLUMNAS = [
   { label: 'Cant', key: 'cantidad', flex: 0.5 },
@@ -37,7 +38,10 @@ export default function CajaConfirmarPedidoScreen({ onConfirmarCobro }) {
   const marcarEntregado = async () => {
     setProcesando(true)
     try {
-      await api.patch(`/pedidos/${pedidoId}/estado`, { id_estado_nuevo: 4 }, auth?.token)
+      const mapa = await obtenerMapaEstados(auth?.token)
+      const idEstado = mapa['entregado']
+      if (!idEstado) throw new Error("Estado 'entregado' no configurado en el servidor")
+      await api.patch(`/pedidos/${pedidoId}/estado`, { id_estado_nuevo: idEstado }, auth?.token)
       await cargar()
     } catch (e) {
       Alert.alert('No se pudo actualizar el estado', e.message)

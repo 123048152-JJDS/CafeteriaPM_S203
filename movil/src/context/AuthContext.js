@@ -35,8 +35,21 @@ export function AuthProvider({ children }) {
     setAuth(null);
   };
 
+  const actualizarPerfil = async ({ nombre, password }) => {
+    const payload = {};
+    if (nombre !== undefined) payload.nombre = nombre;
+    if (password) payload.password = password;
+
+    const actualizado = await api.patch("/usuarios/me", payload, auth?.token);
+
+    const nuevaAuth = { ...auth, nombre: actualizado.nombre };
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nuevaAuth));
+    setAuth(nuevaAuth);
+    return nuevaAuth;
+  };
+
   return (
-    <AuthContext.Provider value={{ auth, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ auth, isLoading, login, logout, actualizarPerfil }}>
       {children}
     </AuthContext.Provider>
   );

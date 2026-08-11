@@ -79,6 +79,47 @@ def update_ingrediente(
     db.refresh(ing)
     return ing
 
+from app.schemas.product import ProductIngredientsUpdate  # añadir al import existente
+
+@router.put("/{id}/ingredientes", response_model=ProductDetailOut)
+def update_producto_ingredientes(
+    id: int,
+    data: ProductIngredientsUpdate,
+    db: Session = Depends(get_db),
+    _=Depends(require_roles("admin", "cocina"))
+):
+    prod = db.query(Product).filter(Product.id == id).first()
+    if not prod:
+        raise HTTPException(404, "Producto no encontrado")
+
+    db.query(ProductIngredient).filter(ProductIngredient.id_producto == id).delete()
+
+    for ing_data in data.ingredientes:
+        ing = db.query(Ingredient).filter(Ingredient.id == ing_data.id_ingrediente).first()
+        if not ing:
+            raise HTTPException(400, f"Ingrediente {ing_data.id_ingrediente} no encontrado")
+        db.add(ProductIngredient(
+            id_producto=id,
+            id_ingrediente=ing_data.id_ingrediente,
+            cantidad=ing_data.cantidad,
+        ))
+
+    db.commit()
+    db.refresh(prod)
+
+    ingredientes = [
+        ProductIngredientOut(
+            id_ingrediente=pi.id_ingrediente,
+            nombre=pi.ingrediente.nombre,
+            unidad=pi.ingrediente.unidad,
+            cantidad=float(pi.cantidad),
+        )
+        for pi in prod.ingredientes
+    ]
+    result = ProductDetailOut.model_validate(prod)
+    result.ingredientes = ingredientes
+    return result
+
 @router.delete("/ingredientes/{id}", status_code=204)
 def delete_ingrediente(
     id: int,
