@@ -29,3 +29,9 @@ class Sale(Base):
     pedido       = relationship("Order",         back_populates="venta")
     cajero       = relationship("User",          back_populates="ventas")
     metodo_pago  = relationship("PaymentMethod", back_populates="ventas")
+
+    @property
+    def cambio(self):
+        if self.monto_recibido is not None and self.monto_total is not None:
+            return float(self.monto_recibido) - float(self.monto_total)
+        return None

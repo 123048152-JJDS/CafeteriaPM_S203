@@ -20,6 +20,11 @@ def get_app_config():
         "app_version":                  config("APP_VERSION",                    default="1.0.0"),
         "environment":                  config("ENVIRONMENT",                    default="development"),
         "debug":                        config("DEBUG",                          default=True, cast=bool),
+        "cors_origins":                 config(
+                                            "CORS_ORIGINS",
+                                            default="http://localhost:8000",
+                                            cast=lambda v: [s.strip() for s in v.split(",") if s.strip()]
+                                         ),
     }
 
 class _Settings:
@@ -40,6 +45,7 @@ class _Settings:
         self.APP_VERSION                 = _app["app_version"]
         self.ENVIRONMENT                 = _app["environment"]
         self.DEBUG                       = _app["debug"]
+        self.CORS_ORIGINS                = _app["cors_origins"]
 
 
 settings = _Settings()

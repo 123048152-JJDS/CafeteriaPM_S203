@@ -1,3 +1,4 @@
+import time
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from decouple import UndefinedValueError
@@ -21,8 +22,8 @@ DATABASE_URL = build_database_url()
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
+    pool_size=5,
+    max_overflow=5,
 )
 
 SessionLocal = sessionmaker(
@@ -41,14 +42,27 @@ def get_db():
     finally:
         db.close()
 
-def verify_connection():
-    try:
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
-        print("[DB] Conexión a PostgreSQL exitosa ✓")
-    except Exception as e:
-        print(f"[DB] Error al conectar con PostgreSQL: {e}")
-        raise SystemExit(1)
+def verify_connection(retries: int = 5, delay: int = 3):
+    """
+    Verifica la conexión a PostgreSQL con reintentos.
+    Útil en el arranque cuando el servicio de BD en Railway
+    puede tardar unos segundos extra en estar disponible.
+    """
+    last_error = None
+    for attempt in range(1, retries + 1):
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            print("[DB] Conexión a PostgreSQL exitosa ✓")
+            return
+        except Exception as e:
+            last_error = e
+            print(f"[DB] Intento {attempt}/{retries} falló: {e}")
+            if attempt < retries:
+                time.sleep(delay)
+
+    print(f"[DB] No se pudo conectar a PostgreSQL tras {retries} intentos: {last_error}")
+    raise SystemExit(1)
 
 
 if __name__ == "__main__":
