@@ -11,7 +11,7 @@ scripts = [
     "seed_admin.py",
     "seed_estados.py",
     "seed_productos.py",
-    # "seed_demo_data.py"
+    "seed_demo_data.py"
 ]
 
 for script in scripts:
