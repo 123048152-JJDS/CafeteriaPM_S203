@@ -776,7 +776,28 @@ def crear_ingrediente():
 @login_required
 def mesas():
     res = api_request("GET", "/mesas")
-    mesas = res.json() if res and res.status_code == 200 else []
+    if res is None or res.status_code != 200:
+        res_slash = api_request("GET", "/mesas/")
+        if res_slash and res_slash.status_code == 200:
+            res = res_slash
+
+    mesas = []
+    if res and res.status_code == 200:
+        try:
+            mesas = res.json()
+        except Exception:
+            mesas = []
+            flash("Error al procesar los datos de mesas devueltos por el servidor.", "danger")
+    else:
+        error_msg = "No se pudieron cargar las mesas desde el servidor API."
+        if res:
+            try:
+                detail = res.json().get("detail", res.text)
+                error_msg += f" (Código {res.status_code}: {detail})"
+            except Exception:
+                error_msg += f" (Código {res.status_code})"
+        flash(error_msg, "danger")
+
     return render_template(
         "mesas.html",
         mesas=mesas,

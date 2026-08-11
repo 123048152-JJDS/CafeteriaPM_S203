@@ -18,6 +18,7 @@ from reportlab.lib.units import inch
 from app.core.database import get_db
 from app.core.security import get_current_user, require_roles
 from app.models.order import Order, OrderDetail, OrderDetailObservation, OrderStatus, OrderStatusHistory
+from app.models.sale import Sale, PaymentMethod
 from app.models.table import Table
 from app.models.product import Product
 from app.models.user import User
@@ -246,6 +247,20 @@ def cambiar_estado(
         id_usuario=current_user.id,
     )
     db.add(historial)
+
+    if estado_nuevo_nombre == "pagado" and not pedido.venta:
+        metodo = db.query(PaymentMethod).first()
+        metodo_id = metodo.id if metodo else 1
+        total = sum(float(d.subtotal or 0) for d in pedido.detalles)
+        venta = Sale(
+            id_pedido=pedido.id,
+            id_cajero=current_user.id,
+            id_metodo_pago=metodo_id,
+            monto_total=total,
+            monto_recibido=total,
+        )
+        db.add(venta)
+
     db.commit()
     db.refresh(pedido)
     return pedido

@@ -8,13 +8,14 @@ from app.core.database import get_db
 from app.core.security import get_current_user, require_roles
 from app.models.table import Table
 from app.models.order import Order, OrderStatus, OrderStatusHistory
+from app.models.sale import Sale, PaymentMethod
 from app.schemas.mesa import MesaCreate, MesaOut 
 
 router = APIRouter(prefix="/mesas", tags=["Mesas"])
 
 def get_estado_mesa(db: Session, mesa_id: int):
     estados_activos = db.query(OrderStatus).filter(
-        OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo", "reservado"])
+        OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo", "entregado", "reservado"])
     ).all()
     ids_activos = [e.id for e in estados_activos]
 
@@ -30,7 +31,8 @@ def get_estado_mesa(db: Session, mesa_id: int):
             return "ocupada", pedido_activo.id
     return "disponible", None
 
-@router.get("/", response_model=List[MesaOut])
+@router.get("", response_model=List[MesaOut])
+@router.get("/", response_model=List[MesaOut], include_in_schema=False)
 def get_mesas(db: Session = Depends(get_db), _=Depends(get_current_user)):
     mesas = db.query(Table).all()
     result = []
@@ -198,7 +200,7 @@ def liberar_mesa(
         raise HTTPException(404, "Mesa no encontrada")
 
     estados_activos = db.query(OrderStatus).filter(
-        OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo"])
+        OrderStatus.nombre.in_(["pendiente", "en_preparacion", "listo", "entregado"])
     ).all()
     ids_activos = [e.id for e in estados_activos]
     pedido_activo = db.query(Order).filter(
@@ -225,6 +227,20 @@ def liberar_mesa(
         id_usuario=current_user.id,
     )
     db.add(historial)
+
+    if not pedido_activo.venta:
+        metodo = db.query(PaymentMethod).first()
+        metodo_id = metodo.id if metodo else 1
+        total = sum(float(d.subtotal or 0) for d in pedido_activo.detalles)
+        venta = Sale(
+            id_pedido=pedido_activo.id,
+            id_cajero=current_user.id,
+            id_metodo_pago=metodo_id,
+            monto_total=total,
+            monto_recibido=total,
+        )
+        db.add(venta)
+
     db.commit()
 
     return {"message": "Mesa liberada correctamente", "pedido_id": pedido_activo.id}
