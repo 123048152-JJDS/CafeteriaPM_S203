@@ -89,6 +89,7 @@ def get_resumen_mes(
 ):
     hoy = date.today()
     primer_dia_mes = hoy.replace(day=1)
+    limite_superior = datetime.combine(hoy, datetime.min.time()) + timedelta(days=1)
 
     estado_pagado = db.query(OrderStatus).filter(OrderStatus.nombre == "pagado").first()
     if not estado_pagado:
@@ -104,7 +105,7 @@ def get_resumen_mes(
 
     ventas_mes = db.query(Sale).filter(
         Sale.fecha >= primer_dia_mes,
-        Sale.fecha <= hoy
+        Sale.fecha < limite_superior
     ).all()
 
     total_ventas = sum(float(v.monto_total) for v in ventas_mes)
@@ -140,10 +141,11 @@ def get_ventas_diarias(
 ):
     hoy = date.today()
     fecha_inicio = hoy - timedelta(days=dias - 1)
+    limite_superior = datetime.combine(hoy, datetime.min.time()) + timedelta(days=1)
 
     ventas = db.query(Sale).filter(
         Sale.fecha >= fecha_inicio,
-        Sale.fecha <= hoy
+        Sale.fecha < limite_superior
     ).all()
 
     ventas_por_dia = {}
@@ -207,7 +209,11 @@ def get_ventas_lista(
     if fecha_inicio:
         query = query.filter(Sale.fecha >= fecha_inicio)
     if fecha_fin:
-        query = query.filter(Sale.fecha <= fecha_fin)
+        try:
+            limite = datetime.fromisoformat(fecha_fin) + timedelta(days=1)
+            query = query.filter(Sale.fecha < limite)
+        except ValueError:
+            pass
     ventas = query.order_by(Sale.fecha.desc()).all()
     return [
         {

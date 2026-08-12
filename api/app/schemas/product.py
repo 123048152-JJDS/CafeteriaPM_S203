@@ -76,3 +76,7 @@ class ProductOut(BaseModel):
 
 class ProductDetailOut(ProductOut):
     ingredientes: list[ProductIngredientOut] = []
+
+
+class ProductIngredientsUpdate(BaseModel):
+    ingredientes: list[ProductIngredientCreate]

@@ -62,14 +62,18 @@ def create_venta(
     if not metodo:
         raise HTTPException(400, "Método de pago no válido")
 
-    total = sum(float(d.subtotal or 0) for d in pedido.detalles)
+    total = sum(
+        (float(d.subtotal) if d.subtotal is not None and float(d.subtotal) > 0 else float(d.precio_unitario or 0) * int(d.cantidad or 0))
+        for d in pedido.detalles
+    )
+    monto_recibido = float(data.monto_recibido) if (data.monto_recibido is not None and float(data.monto_recibido) > 0) else total
 
     venta = Sale(
         id_pedido=data.id_pedido,
         id_cajero=current_user.id,
         id_metodo_pago=data.id_metodo_pago,
         monto_total=total,
-        monto_recibido=data.monto_recibido,
+        monto_recibido=monto_recibido,
     )
     db.add(venta)
     db.flush()

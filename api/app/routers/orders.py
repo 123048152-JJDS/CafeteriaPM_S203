@@ -18,6 +18,7 @@ from reportlab.lib.units import inch
 from app.core.database import get_db
 from app.core.security import get_current_user, require_roles
 from app.models.order import Order, OrderDetail, OrderDetailObservation, OrderStatus, OrderStatusHistory
+from app.models.sale import Sale, PaymentMethod
 from app.models.table import Table
 from app.models.product import Product
 from app.models.user import User
@@ -215,6 +216,7 @@ def cambiar_estado(
         raise HTTPException(400, "Estado destino no válido")
 
     estado_actual_nombre = pedido.estado_actual.nombre
+    estado_actual_id = pedido.id_estado_actual  # capturar ANTES de sobrescribir
     estado_nuevo_nombre = estado_nuevo.nombre
 
     if estado_nuevo_nombre == "cancelado":
@@ -233,6 +235,21 @@ def cambiar_estado(
                 f"No se puede cambiar de '{estado_actual_nombre}' a '{estado_nuevo_nombre}'"
             )
 
+    # Autorización por rol según el estado destino
+    ROLES_PERMITIDOS = {
+        "en_preparacion": ("cocina", "admin"),
+        "listo":          ("cocina", "admin"),
+        "entregado":      ("mesero", "admin"),
+        "pagado":         ("caja", "admin"),
+        "cancelado":      ("mesero", "caja", "admin"),
+    }
+    permitidos = ROLES_PERMITIDOS.get(estado_nuevo_nombre)
+    if permitidos and current_user.role.nombre not in permitidos:
+        raise HTTPException(
+            403,
+            f"Rol '{current_user.role.nombre}' no puede cambiar el pedido a '{estado_nuevo_nombre}'"
+        )
+
     if estado_nuevo_nombre == "listo":
         descontar_ingredientes(db, pedido.id)
 
@@ -241,7 +258,7 @@ def cambiar_estado(
 
     historial = OrderStatusHistory(
         id_pedido=pedido.id,
-        id_estado_origen=pedido.estado_actual.id if pedido.estado_actual else None,
+        id_estado_origen=estado_actual_id,
         id_estado_destino=estado_nuevo.id,
         id_usuario=current_user.id,
     )

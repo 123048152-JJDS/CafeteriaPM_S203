@@ -1,11 +1,34 @@
 import React, { useState } from 'react'
-import { View, Text, StyleSheet, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import BotonPrimario from '../components/BotonPrimario'
 import { useAuth } from '../context/AuthContext'
 
 export default function CocinaPerfilScreen({ onLogout }) {
-  const { auth } = useAuth()
+  const { auth, actualizarPerfil } = useAuth()
   const [nombre, setNombre] = useState(auth?.nombre || '')
+  const [nuevaPassword, setNuevaPassword] = useState('')
+  const [guardando, setGuardando] = useState(false)
+
+  const handleGuardar = async () => {
+    if (!nombre.trim()) {
+      Alert.alert('Nombre inválido', 'El nombre no puede estar vacío')
+      return
+    }
+    if (nuevaPassword && nuevaPassword.length < 6) {
+      Alert.alert('Contraseña inválida', 'Debe tener al menos 6 caracteres')
+      return
+    }
+    setGuardando(true)
+    try {
+      await actualizarPerfil({ nombre: nombre.trim(), password: nuevaPassword || undefined })
+      setNuevaPassword('')
+      Alert.alert('Perfil actualizado', 'Tus cambios se guardaron correctamente')
+    } catch (e) {
+      Alert.alert('No se pudo guardar', e.message)
+    } finally {
+      setGuardando(false)
+    }
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -18,8 +41,20 @@ export default function CocinaPerfilScreen({ onLogout }) {
           <TextInput style={styles.input} value={String(auth?.userId ?? '')} editable={false} />
           <Text style={styles.label}>Rol</Text>
           <TextInput style={styles.input} value={auth?.rol ?? ''} editable={false} />
-          <BotonPrimario titulo="Guardar cambios" onPress={() => {}} />
-          <BotonPrimario titulo="Cerrar sesión" color="#c62828" onPress={onLogout} />
+          <Text style={styles.label}>Nueva contraseña (opcional)</Text>
+          <TextInput
+            style={styles.input}
+            value={nuevaPassword}
+            onChangeText={setNuevaPassword}
+            secureTextEntry
+            placeholder="Dejar vacío para no cambiar"
+          />
+          {guardando ? (
+            <ActivityIndicator color="#1F3864" style={{ marginVertical: 8 }} />
+          ) : (
+            <BotonPrimario titulo="Guardar cambios" onPress={handleGuardar} />
+          )}
+          <BotonPrimario titulo="Cerrar sesión" color="#c62828" onPress={onLogout} disabled={guardando} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

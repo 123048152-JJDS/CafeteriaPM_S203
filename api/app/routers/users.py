@@ -44,6 +44,27 @@ def get_users(
 def get_me(current_user=Depends(get_current_user)):
     return current_user
 
+from app.schemas.user import UserSelfUpdate  # añadir al import existente
+
+@router.patch("/me", response_model=UserOut)
+def update_me(
+    data: UserSelfUpdate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    if data.nombre is not None:
+        if not data.nombre.strip():
+            raise HTTPException(status_code=400, detail="El nombre no puede estar vacío")
+        current_user.nombre = data.nombre.strip()
+    if data.password is not None:
+        if len(data.password) < 6:
+            raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 6 caracteres")
+        current_user.password_hash = hash_password(data.password)
+
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
 @router.get("/{user_id}", response_model=UserOut)
 def get_user(
     user_id: int,
