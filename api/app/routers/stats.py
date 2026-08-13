@@ -466,7 +466,6 @@ def reporte_ventas_pdf(
     flowables.append(fecha)
     flowables.append(Spacer(1, 0.2*inch))
 
-    # Filtros aplicados
     filtros_texto = f"Fechas: {fecha_inicio or 'sin inicio'} - {fecha_fin or 'sin fin'}"
     filtros_parrafo = Paragraph(f"<i>{filtros_texto}</i>", styles['Normal'])
     flowables.append(filtros_parrafo)
@@ -476,7 +475,11 @@ def reporte_ventas_pdf(
     if fecha_inicio:
         query = query.filter(Sale.fecha >= fecha_inicio)
     if fecha_fin:
-        query = query.filter(Sale.fecha <= fecha_fin)
+        try:
+            limite = datetime.fromisoformat(fecha_fin) + timedelta(days=1)
+            query = query.filter(Sale.fecha < limite)
+        except ValueError:
+            pass
 
     ventas = query.order_by(Sale.fecha.desc()).all()
 
@@ -538,7 +541,11 @@ def reporte_ventas_xlsx(
     if fecha_inicio:
         query = query.filter(Sale.fecha >= fecha_inicio)
     if fecha_fin:
-        query = query.filter(Sale.fecha <= fecha_fin)
+        try:
+            limite = datetime.fromisoformat(fecha_fin) + timedelta(days=1)
+            query = query.filter(Sale.fecha < limite)
+        except ValueError:
+            pass
 
     total = 0
     for v in query.order_by(Sale.fecha.desc()).all():
@@ -1092,13 +1099,17 @@ def reporte_historial_pdf(
     flowables.append(tabla_pedidos)
     flowables.append(Spacer(1, 0.2*inch))
 
-    # Ventas recientes
+# Ventas recientes
     flowables.append(Paragraph("<b>Ventas Recientes</b>", styles['Normal']))
     query_ventas = db.query(Sale)
     if fecha_inicio:
         query_ventas = query_ventas.filter(Sale.fecha >= fecha_inicio)
     if fecha_fin:
-        query_ventas = query_ventas.filter(Sale.fecha <= fecha_fin)
+        try:
+            limite_ventas = datetime.fromisoformat(fecha_fin) + timedelta(days=1)
+            query_ventas = query_ventas.filter(Sale.fecha < limite_ventas)
+        except ValueError:
+            pass
     ventas = query_ventas.order_by(Sale.fecha.desc()).limit(20).all()
 
     data_ventas = [["ID", "Pedido", "Monto", "Fecha"]]
@@ -1187,7 +1198,7 @@ def reporte_historial_xlsx(
             p.created_at.strftime("%Y-%m-%d %H:%M") if p.created_at else ""
         ])
 
-    # Hoja de Ventas
+# Hoja de Ventas
     ws_ventas = wb.create_sheet("Ventas")
     headers_ventas = ["ID", "Pedido", "Monto", "Fecha"]
     ws_ventas.append(headers_ventas)
@@ -1195,7 +1206,11 @@ def reporte_historial_xlsx(
     if fecha_inicio:
         query_ventas = query_ventas.filter(Sale.fecha >= fecha_inicio)
     if fecha_fin:
-        query_ventas = query_ventas.filter(Sale.fecha <= fecha_fin)
+        try:
+            limite_ventas = datetime.fromisoformat(fecha_fin) + timedelta(days=1)
+            query_ventas = query_ventas.filter(Sale.fecha < limite_ventas)
+        except ValueError:
+            pass
     for v in query_ventas.order_by(Sale.fecha.desc()).limit(20).all():
         ws_ventas.append([
             v.id,

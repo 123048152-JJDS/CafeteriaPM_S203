@@ -63,6 +63,7 @@ class ProductUpdate(BaseModel):
     id_categoria: Optional[int]   = None
     disponible:   Optional[bool]  = None
     imagen_url:   Optional[str]   = None
+    ingredientes: Optional[list[ProductIngredientCreate]] = None
 
 class ProductOut(BaseModel):
     id:          int

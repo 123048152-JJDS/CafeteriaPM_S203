@@ -201,7 +201,7 @@ def create_producto(
     db.refresh(prod)
     return prod
 
-@router.patch("/{id}", response_model=ProductOut)
+@router.patch("/{id}", response_model=ProductDetailOut)
 def update_producto(
     id:   int,
     data: ProductUpdate,
@@ -211,11 +211,38 @@ def update_producto(
     prod = db.query(Product).filter(Product.id == id).first()
     if not prod:
         raise HTTPException(404, "Producto no encontrado")
-    for field, value in data.model_dump(exclude_none=True).items():
+
+    update_data = data.model_dump(exclude_none=True, exclude={"ingredientes"})
+    for field, value in update_data.items():
         setattr(prod, field, value)
+
+    if data.ingredientes is not None:
+        db.query(ProductIngredient).filter(ProductIngredient.id_producto == id).delete()
+        for ing_data in data.ingredientes:
+            ing = db.query(Ingredient).filter(Ingredient.id == ing_data.id_ingrediente).first()
+            if not ing:
+                raise HTTPException(400, f"Ingrediente {ing_data.id_ingrediente} no encontrado")
+            db.add(ProductIngredient(
+                id_producto=id,
+                id_ingrediente=ing_data.id_ingrediente,
+                cantidad=ing_data.cantidad,
+            ))
+
     db.commit()
     db.refresh(prod)
-    return prod
+
+    ingredientes_out = [
+        ProductIngredientOut(
+            id_ingrediente=pi.id_ingrediente,
+            nombre=pi.ingrediente.nombre,
+            unidad=pi.ingrediente.unidad,
+            cantidad=float(pi.cantidad),
+        )
+        for pi in prod.ingredientes
+    ]
+    result = ProductDetailOut.model_validate(prod)
+    result.ingredientes = ingredientes_out
+    return result
 
 
 @router.delete("/{id}", status_code=204)

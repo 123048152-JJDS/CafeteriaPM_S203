@@ -105,12 +105,8 @@ export default function CocinaEditarProductoScreen({ onGuardado, onEliminado }) 
         precio: precioNum,
         descripcion,
         disponible,
-      }, auth?.token)
-
-      await api.put(`/productos/${id}/ingredientes`, {
         ingredientes: ingredientesPayload,
       }, auth?.token)
-
       onGuardado()
     } catch (e) {
       Alert.alert('No se pudo guardar', e.message)
